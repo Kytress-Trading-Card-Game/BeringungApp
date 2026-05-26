@@ -1,6 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 import { StandortDaten } from '../models/standort-daten.models';
 import {
@@ -11,58 +21,30 @@ import {
 import { StandortDatenService } from '../services/standort-daten.service';
 import { StatsService } from '../services/stats.service';
 
-interface ChartPoint {
-  x: number;
-  y: number;
-  value: number;
-}
-
-interface ChartSeries extends StatsTrendSeries {
-  color: string;
-  points: ChartPoint[];
-  path: string;
-}
-
-interface ChartLabel {
-  label: string;
-  x: number;
-}
-
-interface ChartTick {
-  value: number;
-  y: number;
-}
-
-interface ChartModel {
-  labels: ChartLabel[];
-  yTicks: ChartTick[];
-  series: ChartSeries[];
-  maxValue: number;
-}
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-statistiken',
+  standalone: true,
   imports: [RouterLink],
   templateUrl: './statistiken.html',
   styleUrl: './statistiken.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Statistiken {
+export class Statistiken implements AfterViewInit, OnDestroy {
   private readonly statsService = inject(StatsService);
   private readonly standortService = inject(StandortDatenService);
+  @ViewChild('trendChartCanvas') private trendChartCanvas?: ElementRef<HTMLCanvasElement>;
+  private trendChart: Chart<'line'> | null = null;
 
   protected readonly standorte = signal<StandortDaten[]>([]);
   protected readonly selectedStandortIds = signal<string[]>([]);
   protected readonly bucket = signal<StatsTrendBucket>('month');
   protected readonly fromDate = signal(this.buildDefaultFromDate());
-  protected readonly toDate = signal(this.buildTodayDate());
+  protected readonly toDate = signal(this.buildDefaultToDate());
   protected readonly trend = signal<StatsTrendResponse | null>(null);
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-
-  protected readonly chartWidth = 1200;
-  protected readonly chartHeight = 420;
-  protected readonly chartPadding = { top: 28, right: 24, bottom: 56, left: 72 };
 
   protected readonly chartColors = [
     '#1E4E8C',
@@ -75,52 +57,16 @@ export class Statistiken {
     '#2563EB',
   ];
 
-  protected readonly chartModel = computed<ChartModel | null>(() => {
-    const trend = this.trend();
-
-    if (!trend) {
-      return null;
-    }
-
-    const maxValue = Math.max(1, trend.maxValue);
-    const innerWidth = this.chartWidth - this.chartPadding.left - this.chartPadding.right;
-    const innerHeight = this.chartHeight - this.chartPadding.top - this.chartPadding.bottom;
-    const labelCount = trend.labels.length;
-
-    return {
-      labels: trend.labels.map((label, index) => ({
-        label,
-        x:
-          labelCount === 1
-            ? this.chartPadding.left + innerWidth / 2
-            : this.chartPadding.left + (innerWidth * index) / (labelCount - 1),
-      })),
-      yTicks: this.buildTicks(maxValue),
-      series: trend.series.map((series, index) => {
-        const pointCount = series.values.length;
-        const points = series.values.map((value, valueIndex) => {
-          const x =
-            pointCount === 1
-              ? this.chartPadding.left + innerWidth / 2
-              : this.chartPadding.left + (innerWidth * valueIndex) / (pointCount - 1);
-          const y = this.chartPadding.top + innerHeight - (innerHeight * value) / maxValue;
-
-          return { x, y, value };
-        });
-
-        return {
-          ...series,
-          color: this.chartColors[index % this.chartColors.length],
-          points,
-          path: this.buildPath(points),
-        };
-      }),
-      maxValue,
-    };
-  });
-
   constructor() {
     this.loadStandorte();
+  }
+
+  ngAfterViewInit(): void {
+    this.renderTrendChart();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyTrendChart();
   }
 
   protected updateBucket(value: string): void {
@@ -159,10 +105,15 @@ export class Statistiken {
   protected clearStandorte(): void {
     this.selectedStandortIds.set([]);
     this.trend.set(null);
+    this.renderTrendChart();
   }
 
   protected getSeriesMax(series: StatsTrendSeries): number {
     return series.values.reduce((highest, value) => Math.max(highest, value), 0);
+  }
+
+  protected getChartColor(index: number): string {
+    return this.chartColors[index % this.chartColors.length];
   }
 
   protected formatAxisLabel(value: number): string {
@@ -193,6 +144,7 @@ export class Statistiken {
       this.isLoading.set(false);
       this.errorMessage.set(null);
       this.trend.set(null);
+      this.renderTrendChart();
       return;
     }
 
@@ -211,11 +163,13 @@ export class Statistiken {
         next: (trend) => {
           this.trend.set(trend);
           this.isLoading.set(false);
+          this.renderTrendChart();
         },
         error: () => {
           this.trend.set(null);
           this.isLoading.set(false);
           this.errorMessage.set('Trenddaten konnten nicht geladen werden.');
+          this.renderTrendChart();
         },
       });
   }
@@ -224,8 +178,8 @@ export class Statistiken {
     return this.formatDateInput(new Date(new Date().getFullYear(), 0, 1));
   }
 
-  private buildTodayDate(): string {
-    return this.formatDateInput(new Date());
+  private buildDefaultToDate(): string {
+    return this.formatDateInput(new Date(new Date().getFullYear(), 11, 31));
   }
 
   private formatDateInput(date: Date): string {
@@ -236,19 +190,84 @@ export class Statistiken {
     return `${year}-${month}-${day}`;
   }
 
-  private buildPath(points: ChartPoint[]): string {
-    return points
-      .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
-      .join(' ');
+  private renderTrendChart(): void {
+    const canvas = this.trendChartCanvas?.nativeElement;
+    const trend = this.trend();
+
+    if (!canvas || !trend) {
+      this.destroyTrendChart();
+      return;
+    }
+
+    this.destroyTrendChart();
+
+    const config: ChartConfiguration<'line'> = {
+      type: 'line',
+      data: {
+        labels: trend.labels,
+        datasets: trend.series.map((series, index) => ({
+          label: series.standortName,
+          data: series.values,
+          borderColor: this.getChartColor(index),
+          backgroundColor: this.getChartColor(index),
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBorderWidth: 2,
+          pointBackgroundColor: this.getChartColor(index),
+          pointBorderColor: '#FFFFFF',
+          fill: false,
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+        })),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#475569',
+              boxWidth: 14,
+              boxHeight: 14,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              color: '#F1F5F9',
+            },
+            ticks: {
+              color: '#64748B',
+            },
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#E5E9F0',
+            },
+            ticks: {
+              color: '#64748B',
+              precision: 0,
+            },
+          },
+        },
+      },
+    };
+
+    this.trendChart = new Chart(canvas, config);
   }
 
-  private buildTicks(maxValue: number): ChartTick[] {
-    const innerHeight = this.chartHeight - this.chartPadding.top - this.chartPadding.bottom;
-
-    return [4, 3, 2, 1, 0].map((step) => {
-      const value = Math.round((maxValue * step) / 4);
-      const y = this.chartPadding.top + innerHeight - (innerHeight * value) / maxValue;
-      return { value, y };
-    });
+  private destroyTrendChart(): void {
+    if (this.trendChart) {
+      this.trendChart.destroy();
+      this.trendChart = null;
+    }
   }
 }

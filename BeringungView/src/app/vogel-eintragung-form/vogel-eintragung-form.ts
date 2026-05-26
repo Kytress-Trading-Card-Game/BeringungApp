@@ -9,6 +9,7 @@ import {
   VogelErfassungCreateDto,
   VogelGeschlecht,
 } from '../models/vogel-erfassung.models';
+import { ArtenInfos } from '../models/arten-infos.models';
 import { VogelErfassungService } from '../services/vogel-erfassung.service';
 import { VogelEintragungModalService } from '../services/vogel-eintragung-modal.service';
 import { ToastService } from '../services/toast-message.service';
@@ -41,6 +42,7 @@ export class VogelEintragungForm implements AfterViewInit {
   protected readonly isLoadingArten = signal(false);
   protected readonly showArtSuggestions = signal(false);
   protected readonly vogelartQuery = signal('');
+  protected readonly artenInfos = signal<ArtenInfos[]>([]);
   private lastRingnummerValue = '';
   private suppressRingnummerLookup = false;
   private retryDto: VogelErfassungCreateDto | null = null;
@@ -91,6 +93,7 @@ export class VogelEintragungForm implements AfterViewInit {
 
   constructor() {
     this.loadSettings();
+    this.loadArtenInfos();
   }
 
   ngAfterViewInit(): void {
@@ -140,6 +143,7 @@ export class VogelEintragungForm implements AfterViewInit {
       .subscribe({
         next: () => {
           this.isSaving.set(false);
+          this.incrementArtCount(dto.vogelart);
           this.toastService.success('Vogel erfolgreich eingetragen.');
           this.resetForm();
           this.focusField('ringnummer');
@@ -184,6 +188,7 @@ export class VogelEintragungForm implements AfterViewInit {
         next: () => {
           this.isSaving.set(false);
           this.closeServerIssues();
+          this.incrementArtCount(dto.vogelart);
           this.toastService.success('Vogel erfolgreich eingetragen.');
           this.resetForm();
           this.focusField('ringnummer');
@@ -301,6 +306,7 @@ export class VogelEintragungForm implements AfterViewInit {
 
   protected onVogelartBlur(): void {
     this.showArtSuggestions.set(false);
+    this.tryAutoRingnummerForArt(this.form.controls.Vogelart.value ?? '');
   }
 
   protected onVogelartKeydown(event: KeyboardEvent): void {
@@ -322,6 +328,7 @@ export class VogelEintragungForm implements AfterViewInit {
     this.form.controls.Vogelart.setValue(value);
     this.vogelartQuery.set(value);
     this.showArtSuggestions.set(false);
+    this.tryAutoRingnummerForArt(value);
   }
 
   protected onGeschlechtChange(): void {
@@ -373,12 +380,17 @@ export class VogelEintragungForm implements AfterViewInit {
   }
 
   protected onFluegellaengeInput(value: string): void {
-    const formatted = this.formatDecimalInput(value, true);
+    const leadingDigits = this.getAutoCommaLeadingDigits('Fluegellaenge');
+    const formatted = this.formatDecimalInput(
+      value,
+      true,
+      leadingDigits,
+    );
     if (formatted !== value) {
       this.form.controls.Fluegellaenge.setValue(formatted, { emitEvent: false });
     }
 
-    if (formatted.trim().length >= 3) {
+    if (formatted.trim().length >= leadingDigits + 1) {
       this.focusField('geschlecht');
     }
   }
@@ -397,12 +409,17 @@ export class VogelEintragungForm implements AfterViewInit {
   }
 
   protected onGewichtInput(value: string): void {
-    const formatted = this.formatDecimalInput(value, true);
+    const leadingDigits = this.getAutoCommaLeadingDigits('Gewicht');
+    const formatted = this.formatDecimalInput(
+      value,
+      true,
+      leadingDigits,
+    );
     if (formatted !== value) {
       this.form.controls.Gewicht.setValue(formatted, { emitEvent: false });
     }
 
-    if (formatted.trim().length >= 3) {
+    if (formatted.trim().length >= leadingDigits + 1) {
       this.focusField('fluegellaenge');
     }
   }
@@ -456,6 +473,20 @@ export class VogelEintragungForm implements AfterViewInit {
         error: () => {
           this.topArten.set([]);
           this.isLoadingArten.set(false);
+        },
+      });
+  }
+
+  private loadArtenInfos(): void {
+    this.artenInfosService
+      .getAll()
+      .pipe(take(1))
+      .subscribe({
+        next: (items) => {
+          this.artenInfos.set(items ?? []);
+        },
+        error: () => {
+          this.artenInfos.set([]);
         },
       });
   }
@@ -525,6 +556,70 @@ export class VogelEintragungForm implements AfterViewInit {
     this.focusField('gewicht');
   }
 
+  private incrementArtCount(vogelart: string | null): void {
+    const artName = vogelart?.trim();
+    if (!artName) {
+      return;
+    }
+
+    const art = this.artenInfos().find(
+      (item) => item.artbezeichnung.trim().toLowerCase() === artName.toLowerCase(),
+    );
+
+    if (!art) {
+      return;
+    }
+
+    this.topArten.update((current) => {
+      const normalized = art.artbezeichnung.trim().toLowerCase();
+      const index = current.findIndex((item) => item.key.trim().toLowerCase() === normalized);
+
+      if (index < 0) {
+        return [...current, { key: art.artbezeichnung, count: 1 }];
+      }
+
+      const next = [...current];
+      next[index] = { ...next[index], count: next[index].count + 1 };
+      return next;
+    });
+  }
+
+  private tryAutoRingnummerForArt(value: string): void {
+    const currentRingnummer = this.form.controls.Ringnummer.value.trim();
+    if (currentRingnummer.length > 0 || this.suppressRingnummerLookup) {
+      return;
+    }
+
+    const artName = value.trim();
+    if (!artName) {
+      return;
+    }
+
+    const art = this.artenInfos().find(
+      (item) => item.artbezeichnung.trim().toLowerCase() === artName.toLowerCase(),
+    );
+    const prefix = art?.ringnummerTyp?.trim().toUpperCase() ?? '';
+    const letter = prefix.length > 0 ? prefix[0] : '';
+
+    if (!/^[A-Z]$/.test(letter)) {
+      return;
+    }
+
+    this.suppressRingnummerLookup = true;
+    this.vogelErfassungService
+      .getNextRingnummer(letter)
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          this.form.controls.Ringnummer.setValue(response.ringnummer);
+          this.lastRingnummerValue = response.ringnummer;
+        },
+        error: () => {
+          this.suppressRingnummerLookup = false;
+        },
+      });
+  }
+
   private normalizeNumber(value: string | null): number | null {
     if (!value) {
       return null;
@@ -545,15 +640,37 @@ export class VogelEintragungForm implements AfterViewInit {
     return `${parts[0]},${parts.slice(1).join('')}`;
   }
 
-  private formatDecimalInput(value: string, autoComma: boolean): string {
+  private formatDecimalInput(value: string, autoComma: boolean, leadingDigits: number): string {
     const digitsOnly = value.replace(/\D/g, '');
     const hasComma = value.includes(',');
+    const normalizedLeadingDigits = Math.max(1, leadingDigits);
 
-    if (autoComma && !hasComma && digitsOnly.length === 3) {
-      return `${digitsOnly.slice(0, 2)},${digitsOnly.slice(2)}`;
+    if (autoComma && !hasComma && digitsOnly.length === normalizedLeadingDigits + 1) {
+      return `${digitsOnly.slice(0, normalizedLeadingDigits)},${digitsOnly.slice(normalizedLeadingDigits)}`;
     }
 
     return this.sanitizeNumericInput(value);
+  }
+
+  private getAutoCommaLeadingDigits(controlName: 'Gewicht' | 'Fluegellaenge'): number {
+    const artName = this.form.controls.Vogelart.value?.trim().toLowerCase() ?? '';
+    if (!artName) {
+      return 2;
+    }
+
+    const art = this.artenInfos().find(
+      (item) => item.artbezeichnung.trim().toLowerCase() === artName,
+    );
+
+    if (!art) {
+      return 2;
+    }
+
+    if (controlName === 'Gewicht') {
+      return (art.minGewicht ?? 0) > 99 ? 3 : 2;
+    }
+
+    return (art.minFluegellaenge ?? 0) > 99 ? 3 : 2;
   }
 
   private validateNumericRange(

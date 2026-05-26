@@ -61,7 +61,7 @@ export class Debug implements OnInit {
     }),
     count: new FormControl(120, {
       nonNullable: true,
-      validators: [Validators.required, Validators.min(1), Validators.max(5000)],
+      validators: [Validators.required, Validators.min(1), Validators.max(100000)],
     }),
     standortId: new FormControl('', {
       nonNullable: true,

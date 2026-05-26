@@ -45,6 +45,19 @@ namespace BeringungApi.Services
 				}
 				else
 				{
+					if (!string.IsNullOrWhiteSpace(art.RingnummerTyp) && !string.IsNullOrWhiteSpace(dto.Ringnummer))
+					{
+						var expectedPrefix = art.RingnummerTyp.Trim().ToUpperInvariant();
+						var actualPrefix = dto.Ringnummer.Trim().ToUpperInvariant()[0].ToString();
+
+						if (!string.Equals(actualPrefix, expectedPrefix, System.StringComparison.Ordinal))
+						{
+							issues.Add(
+								$"Ringnummer passt nicht zum Ringtyp der Art {art.Artbezeichnung} ({art.RingnummerTyp})."
+							);
+						}
+					}
+
 					// use ArtenInfos min/max to validate measurements
 					if (dto.Gewicht.HasValue && art.MinGewicht.HasValue && dto.Gewicht < art.MinGewicht)
 					{

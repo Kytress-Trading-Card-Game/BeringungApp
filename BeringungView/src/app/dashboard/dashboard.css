@@ -64,3 +64,13 @@
 	font-size: 0.9rem;
 	font-weight: 600;
 }
+
+.dashboard-delta-badge {
+	background: var(--brand-100);
+	color: var(--brand-700);
+}
+
+.dashboard-delta-badge--negative {
+	background: var(--danger-100);
+	color: var(--danger-500);
+}

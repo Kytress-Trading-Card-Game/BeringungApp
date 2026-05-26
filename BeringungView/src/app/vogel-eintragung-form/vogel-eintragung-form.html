@@ -1,5 +1,5 @@
 @if (!isServerIssuesOpen()) {
-<form class="grid gap-5" [formGroup]="form" (ngSubmit)="submit()">
+<form class="grid gap-5" [formGroup]="form" (ngSubmit)="submit()" autocomplete="off">
 	@if (errorMessage()) {
 		<div class="rounded-xl bg-[#fee2e2] px-4 py-3 text-sm font-semibold text-[#b91c1c]" role="alert">
 			{{ errorMessage() }}
@@ -36,6 +36,7 @@
 				formControlName="Ringnummer"
 				placeholder="3A-119"
 				autofocus
+				autocomplete="off"
 				(input)="onRingnummerInput($any($event.target).value)"
 				(blur)="onRingnummerBlur($any($event.target).value)"
 				(keydown)="onRingnummerKeydown($event)"
@@ -61,6 +62,7 @@
 					formControlName="Vogelart"
 					placeholder="Blackbird"
 					type="text"
+					autocomplete="off"
 					(input)="onVogelartInput($any($event.target).value)"
 					(focus)="onVogelartFocus()"
 					(blur)="onVogelartBlur()"
@@ -94,6 +96,7 @@
 				formControlName="Gewicht"
 				inputmode="decimal"
 				placeholder="z.B. 21,5"
+				autocomplete="off"
 				(input)="onGewichtInput($any($event.target).value)"
 				(keydown)="onGewichtKeydown($event)"
 				type="text" />
@@ -106,6 +109,7 @@
 				formControlName="Fluegellaenge"
 				inputmode="decimal"
 				placeholder="z.B. 45,0"
+				autocomplete="off"
 				(input)="onFluegellaengeInput($any($event.target).value)"
 				(keydown)="onFluegellaengeKeydown($event)"
 				type="text" />

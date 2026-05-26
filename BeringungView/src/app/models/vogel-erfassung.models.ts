@@ -14,7 +14,7 @@ export interface VogelErfassungCreateDto {
   ringnummer: string;
   beringungsdatum: string | Date;
   wiederfang: boolean;
-  vogelart?: string | null;
+  vogelart: string | null;
   gewicht: number | null;
   fluegellaenge: number | null;
   geschlecht: VogelGeschlecht;
@@ -28,7 +28,7 @@ export interface VogelErfassung {
   ringnummer: string;
   beringungsdatum: string;
   beringungsort: string;
-  koordinaten?: string | null;
+  koordinaten: string | null;
   wiederfang: boolean;
   vogelart?: string | null;
   gewicht: number | null;
