@@ -1,11 +1,11 @@
 <section class="stats-page mx-auto w-full max-w-7xl px-6 py-8">
 	@if (activePanel() === 'vergleich') {
-	<button type="button" class="stats-nav-button stats-nav-right" aria-label="Standort-Statistik anzeigen"
+	<button type="button" class="stats-nav-button stats-nav-right cursor-pointer" aria-label="Standort-Statistik anzeigen"
 		(click)="showStandortPanel()">
 		&gt;
 	</button>
 	} @else {
-	<button type="button" class="stats-nav-button stats-nav-left" aria-label="Zurueck zur Zeitreihe"
+	<button type="button" class="stats-nav-button stats-nav-left cursor-pointer" aria-label="Zurück zur Zeitreihe"
 		(click)="showVergleichPanel()">
 		&lt;
 	</button>
@@ -20,13 +20,19 @@
 						Standort-Statistiken im Detail
 					}
 				</h1>
-				<p class="max-w-3xl text-sm leading-6 text-[color:var(--ink-500)]">
-					@if (activePanel() === 'vergleich') {
-						Vergleiche die Beringungen aller gespeicherten Standorte in einer Zeitreihe. Waehle den Zeitraum, die
-						Zeitaufloesung und die Standorte, die in der Auswertung sichtbar sein sollen.
-					} @else {
-						Sieh dir die wichtigsten Kennzahlen und Verteilungen fuer einen einzelnen Standort an.
-					}
+				<p class="grid max-w-3xl text-sm leading-6 text-[color:var(--ink-500)]">
+					<!-- Zustand 1: Vergleich -->
+					<span class="col-start-1 row-start-1 transition-opacity duration-200"
+						[class.opacity-0]="activePanel() !== 'vergleich'" [class.pointer-events-none]="activePanel() !== 'vergleich'">
+						Vergleiche die Beringungen aller gespeicherten Standorte in einer Zeitreihe. Wähle den Zeitraum, die
+						Zeitauflösung und die Standorte, die in der Auswertung sichtbar sein sollen.
+					</span>
+				
+					<!-- Zustand 2: Einzelner Standort -->
+					<span class="col-start-1 row-start-1 transition-opacity duration-200"
+						[class.opacity-0]="activePanel() === 'vergleich'" [class.pointer-events-none]="activePanel() === 'vergleich'">
+						Sieh dir die wichtigsten Kennzahlen und Verteilungen für einen einzelnen Standort an.
+					</span>
 				</p>
 			</div>
 			<div class="flex flex-wrap items-center gap-3">
@@ -38,10 +44,10 @@
 			</div>
 		</div>
 
-		<div class="stats-panel-container mt-8">
+		<div class="stats-panel-container mt-8 overflow-hidden">
 			
 			<div class="stats-panel-wrapper" [class.is-standort]="activePanel() === 'standort'">
-			<section class="stats-panel">
+			<section class="stats-panel min-w-full px-4">
 				<div class="grid min-w-0 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
 					<aside class="space-y-6">
 						<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
@@ -74,7 +80,7 @@
 								</label>
 
 								<label class="block space-y-2">
-									<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Aufloesung</span>
+									<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Auflösung</span>
 									<select
 										#bucketSelect
 										class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
@@ -158,12 +164,12 @@
 
 							<div class="mt-6 overflow-hidden rounded-3xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)]">
 								<div class="relative h-[420px] w-full p-4">
-									<canvas #trendChartCanvas class="h-full w-full" role="img" aria-label="Beringungen je Standort ueber die Zeit"></canvas>
+									<canvas #trendChartCanvas class="h-full w-full" role="img" aria-label="Beringungen je Standort über die Zeit"></canvas>
 									@if (!trend()) {
 										<div class="absolute inset-0 flex items-center justify-center px-6 text-center">
 											<div class="max-w-md space-y-3">
 												<p class="text-lg font-semibold text-[color:var(--ink-900)]">Noch keine Trenddaten</p>
-												<p class="text-sm text-[color:var(--ink-500)]">Waehle einen Zeitraum und mindestens einen Standort aus, um die Zeitreihe zu laden.</p>
+												<p class="text-sm text-[color:var(--ink-500)]">Wähle einen Zeitraum und mindestens einen Standort aus, um die Zeitreihe zu laden.</p>
 											</div>
 										</div>
 									}
@@ -191,12 +197,12 @@
 				</div>
 			</section>
 
-			<section class="stats-panel">
+			<section class="stats-panel min-w-full px-4">
 				<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
 					<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 						<div>
 							<p class="text-sm font-semibold text-[color:var(--ink-500)]">Standort-Fokus</p>
-							<h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">Kennzahlen fuer den ausgewaehlten Standort</h2>
+							<h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">Kennzahlen für den ausgewählten Standort</h2>
 							<p class="mt-2 text-sm text-[color:var(--ink-500)]">
 								Die Charts zeigen den aktuellen Saisonstand sowie die wichtigsten Verteilungen.
 							</p>
@@ -208,7 +214,7 @@
 								class="rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
 								[value]="detailStandortId() ?? ''"
 								(change)="selectDetailStandort(detailStandortSelect.value)">
-								<option value="" disabled>Standort waehlen</option>
+								<option value="" disabled>Standort wählen</option>
 								@for (standort of standorte(); track standort.id) {
 									<option [value]="standort.id">{{ standort.standort }}</option>
 								}
@@ -239,7 +245,7 @@
 					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
 						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Häufigste Vogelarten</p>
 						<div class="mt-4 h-[220px]">
-							<canvas #topArtenChartCanvas class="h-full w-full" role="img" aria-label="Haeufigste Vogelarten"></canvas>
+							<canvas #topArtenChartCanvas class="h-full w-full" role="img" aria-label="Häufigste Vogelarten"></canvas>
 						</div>
 					</div>
 				</div>
@@ -258,9 +264,9 @@
 						</div>
 					</div>
 					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
-						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Fangaktivitaet pro Monat</p>
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Fangaktivität pro Monat</p>
 						<div class="mt-4 h-[220px]">
-							<canvas #monthChartCanvas class="h-full w-full" role="img" aria-label="Fangaktivitaet pro Monat"></canvas>
+							<canvas #monthChartCanvas class="h-full w-full" role="img" aria-label="Fangaktivität pro Monat"></canvas>
 						</div>
 					</div>
 				</div>

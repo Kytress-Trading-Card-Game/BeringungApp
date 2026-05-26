@@ -11,10 +11,11 @@ import { StatsService } from '../services/stats.service';
 import { StatsSeasonResponse } from '../models/stats.models';
 import { PagedResponse } from '../models/Paging';
 import { ToastService } from '../services/toast-message.service';
+import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [VogelEintragungForm, RouterLink],
+  imports: [VogelEintragungForm, RouterLink, DecimalPipe],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -19,6 +19,10 @@ public class AppDbContext : DbContext
 			modelBuilder.Entity<VogelErfassung>()
 				.HasIndex(v => v.Beringungsdatum);
 			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => v.StandortKey);
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => new { v.StandortKey, v.Beringungsdatum });
+			modelBuilder.Entity<VogelErfassung>()
 				.HasIndex(v => new { v.Beringungsort, v.Koordinaten });
 			modelBuilder.Entity<VogelErfassung>()
 				.HasIndex(v => new { v.Beringungsdatum, v.Beringungsort, v.Koordinaten });

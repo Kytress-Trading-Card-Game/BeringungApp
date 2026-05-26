@@ -279,11 +279,13 @@ namespace BeringungApi.Controllers
 
             var beringungsort = "AUTO";
             var koordinaten = "AUTO";
+            string? standortKey = null;
 
             if (settings?.ActiveStandort != null)
             {
                 beringungsort = settings.ActiveStandort.Standort;
                 koordinaten = settings.ActiveStandort.Koordinaten ?? koordinaten;
+                standortKey = settings.ActiveStandort.Id.ToString();
             }
 
             var vogelErfassung = new VogelErfassung
@@ -291,6 +293,7 @@ namespace BeringungApi.Controllers
                 Ringnummer = dto.Ringnummer,
                 Beringungsdatum = dto.Beringungsdatum,
                 Beringungsort = beringungsort,
+                StandortKey = standortKey,
                 Koordinaten = koordinaten,
                 Wiederfang = dto.Wiederfang,
                 Vogelart = dto.Vogelart,

@@ -71,7 +71,7 @@
 			@if (showArtSuggestions()) {
 				<div class="absolute left-0 right-0 top-[100%] z-10 mt-1 rounded-xl border border-[color:var(--surface-muted)] bg-white shadow-lg">
 					@if (isLoadingArten()) {
-						<div class="px-4 py-3 text-xs font-semibold text-[color:var(--ink-500)]">Lade Vorschlaege...</div>
+						<div class="px-4 py-3 text-xs font-semibold text-[color:var(--ink-500)]">Lade Vorschläge...</div>
 					} @else if (filteredArtSuggestions().length === 0) {
 						<div class="px-4 py-3 text-xs font-semibold text-[color:var(--ink-500)]">Keine passenden Arten</div>
 					} @else {

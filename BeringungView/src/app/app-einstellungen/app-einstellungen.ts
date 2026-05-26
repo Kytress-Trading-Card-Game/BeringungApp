@@ -26,8 +26,20 @@ export class AppEinstellungen {
   protected readonly isCreating = signal(false);
   protected readonly isUpdatingActive = signal(false);
   protected readonly deletingId = signal<string | null>(null);
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly isSavingEdit = signal(false);
 
   protected readonly standortForm = new FormGroup({
+    standort: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(200)],
+    }),
+    koordinaten: new FormControl<string | null>(null, {
+      validators: [Validators.maxLength(100)],
+    }),
+  });
+
+  protected readonly editForm = new FormGroup({
     standort: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(200)],
@@ -126,7 +138,64 @@ export class AppEinstellungen {
         },
         error: () => {
           this.deletingId.set(null);
-          this.errorMessage.set('Standort konnte nicht geloescht werden.');
+          this.errorMessage.set('Standort konnte nicht gelöscht werden.');
+        },
+      });
+  }
+
+  protected startEdit(standort: StandortDaten): void {
+    this.editingId.set(standort.id);
+    this.editForm.setValue({
+      standort: standort.standort,
+      koordinaten: standort.koordinaten ?? null,
+    });
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.editForm.reset({ standort: '', koordinaten: null });
+  }
+
+  protected saveEdit(standort: StandortDaten): void {
+    if (this.isSavingEdit()) {
+      return;
+    }
+
+    if (this.editForm.invalid) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.editForm.getRawValue();
+    const updated: StandortDaten = {
+      ...standort,
+      standort: raw.standort.trim(),
+      koordinaten: raw.koordinaten?.trim() || null,
+    };
+
+    this.isSavingEdit.set(true);
+    this.errorMessage.set(null);
+
+    this.standortService
+      .update(standort.id, updated)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.standorte.set(
+            this.standorte().map((item) => (item.id === standort.id ? updated : item)),
+          );
+          if (this.settings()?.activeStandortId === standort.id) {
+            this.settings.set({
+              ...(this.settings() as AppSettings),
+              activeStandort: updated,
+            });
+          }
+          this.isSavingEdit.set(false);
+          this.cancelEdit();
+        },
+        error: () => {
+          this.isSavingEdit.set(false);
+          this.errorMessage.set('Standort konnte nicht gespeichert werden.');
         },
       });
   }

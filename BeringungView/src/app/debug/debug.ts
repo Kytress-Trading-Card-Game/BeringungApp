@@ -179,14 +179,14 @@ export class Debug implements OnInit {
         }
       }
 
-      this.toastService.success(`${generated} Vogel-Datensätze fuer ${selectedStandort.standort} erzeugt.`);
-      this.statusMessage.set(`Fertig. ${generated} Eintraege erzeugt.`);
+      this.toastService.success(`${generated} Vogel-Datensätze für ${selectedStandort.standort} erzeugt.`);
+      this.statusMessage.set(`Fertig. ${generated} Einträge erzeugt.`);
 
       if (previousStandortId && previousStandortId !== standortId) {
         await firstValueFrom(this.appSettingsService.setActiveStandort(previousStandortId));
       }
     } catch (error) {
-      this.errorMessage.set('Die Generierung ist fehlgeschlagen. Bitte pruefe die Datenbasis.');
+      this.errorMessage.set('Die Generierung ist fehlgeschlagen. Bitte prüfe die Datenbasis.');
       this.statusMessage.set('Generierung abgebrochen.');
       console.error(error);
 
@@ -371,7 +371,7 @@ export class Debug implements OnInit {
       bemerkungen: this.randomChance(8)
         ? this.randomChoice([
           'Gefieder leicht feucht.',
-          'Kurze Kontrollmessung ohne Auffaelligkeiten.',
+          'Kurze Kontrollmessung ohne Auffälligkeiten.',
           'Vogel wirkte ruhig und in guter Verfassung.',
           'Zusatzkontrolle beim zweiten Fang.',
         ])
@@ -610,6 +610,6 @@ export class Debug implements OnInit {
       return `${hauptBuchstabe}${zifferInt}${nebenBuchstabe}${nummer.toString().padStart(4, '0')}`;
     }
 
-    throw new Error('Maximale Ringnummer fuer diesen Buchstaben erreicht');
+    throw new Error('Maximale Ringnummer für diesen Buchstaben erreicht');
   }
 }

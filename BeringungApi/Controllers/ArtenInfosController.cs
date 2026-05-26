@@ -63,14 +63,19 @@ namespace BeringungApi.Controllers
 				return NotFound();
 			}
 
+			var standortKey = standort.Id.ToString();
 			var standortQuery = _context.VogelErfassungen
 				.AsNoTracking()
-				.Where(v => v.Beringungsort == standort.Standort)
+				.Where(v =>
+					v.StandortKey == standortKey
+					|| (string.IsNullOrEmpty(v.StandortKey) && v.Beringungsort == standort.Standort))
 				.Where(v => !string.IsNullOrWhiteSpace(v.Vogelart));
 
 			if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
 			{
-				standortQuery = standortQuery.Where(v => v.Koordinaten == standort.Koordinaten);
+				standortQuery = standortQuery.Where(v =>
+					v.StandortKey == standortKey
+					|| (string.IsNullOrEmpty(v.StandortKey) && v.Koordinaten == standort.Koordinaten));
 			}
 
 			var counts = await standortQuery

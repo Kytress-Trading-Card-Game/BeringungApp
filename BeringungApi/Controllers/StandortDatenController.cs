@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeringungApi.Data;
 using BeringungApi.Models;
+using BeringungApi.Services;
 
 namespace BeringungApi.Controllers
 {
@@ -10,22 +11,24 @@ namespace BeringungApi.Controllers
 	public class StandortDatenController : ControllerBase
 	{
 		private readonly AppDbContext _context;
+		private readonly IStatsCacheService _statsCache;
 
-		public StandortDatenController(AppDbContext context)
+		public StandortDatenController(AppDbContext context, IStatsCacheService statsCache)
 		{
 			_context = context;
+			_statsCache = statsCache;
 		}
 
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<StandortDaten>>> GetStandorte()
 		{
-			return await _context.StandortDaten.ToListAsync();
+			return await _context.StandortDaten.AsNoTracking().ToListAsync();
 		}
 
 		[HttpGet("{id}")]
 		public async Task<ActionResult<StandortDaten>> GetStandort(Guid id)
 		{
-			var standort = await _context.StandortDaten.FindAsync(id);
+			var standort = await _context.StandortDaten.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
 			if (standort == null)
 			{
 				return NotFound();
@@ -39,6 +42,7 @@ namespace BeringungApi.Controllers
 		{
 			_context.StandortDaten.Add(standort);
 			await _context.SaveChangesAsync();
+			_statsCache.Invalidate();
 
 			return CreatedAtAction(nameof(GetStandort), new { id = standort.Id }, standort);
 		}
@@ -56,6 +60,7 @@ namespace BeringungApi.Controllers
 			try
 			{
 				await _context.SaveChangesAsync();
+				_statsCache.Invalidate();
 			}
 			catch (DbUpdateConcurrencyException)
 			{
@@ -83,6 +88,7 @@ namespace BeringungApi.Controllers
 
 			_context.StandortDaten.Remove(standort);
 			await _context.SaveChangesAsync();
+			_statsCache.Invalidate();
 
 			return NoContent();
 		}

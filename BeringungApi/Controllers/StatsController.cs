@@ -420,29 +420,41 @@ namespace BeringungApi.Controllers
 			var series = new List<StatsTrendSeriesResponse>();
 			var maxValue = 0;
 			var endExclusive = endDate.AddDays(1);
+			var standortKeys = standorte.Select(s => s.Id.ToString()).Distinct().ToList();
 			var standortNames = standorte.Select(s => s.Standort).Distinct().ToList();
 			var countsByOrtBucket = new Dictionary<(string Ort, DateTime Bucket), int>();
 			var countsByOrtKoordBucket = new Dictionary<(string Ort, string? Koord, DateTime Bucket), int>();
+			var countsByKeyBucket = new Dictionary<(string Key, DateTime Bucket), int>();
 
-			if (standortNames.Count > 0)
+			if (standortNames.Count > 0 || standortKeys.Count > 0)
 			{
 				if (bucketMode == "year")
 				{
 					var counts = await _context.VogelErfassungen
 						.AsNoTracking()
 						.Where(v => v.Beringungsdatum >= startDate && v.Beringungsdatum < endExclusive)
-						.Where(v => standortNames.Contains(v.Beringungsort))
-						.GroupBy(v => new { v.Beringungsort, v.Koordinaten, v.Beringungsdatum.Year })
-						.Select(g => new { g.Key.Beringungsort, g.Key.Koordinaten, g.Key.Year, Count = g.Count() })
+						.Where(v => (v.StandortKey != null && standortKeys.Contains(v.StandortKey))
+							|| (string.IsNullOrEmpty(v.StandortKey) && standortNames.Contains(v.Beringungsort)))
+						.GroupBy(v => new { v.StandortKey, v.Beringungsort, v.Koordinaten, v.Beringungsdatum.Year })
+						.Select(g => new { g.Key.StandortKey, g.Key.Beringungsort, g.Key.Koordinaten, g.Key.Year, Count = g.Count() })
 						.ToListAsync();
 
 					foreach (var item in counts)
 					{
 						var bucketStart = new DateTime(item.Year, 1, 1);
-						countsByOrtBucket[(item.Beringungsort, bucketStart)] =
-							(countsByOrtBucket.TryGetValue((item.Beringungsort, bucketStart), out var value) ? value : 0)
-							+ item.Count;
-						countsByOrtKoordBucket[(item.Beringungsort, item.Koordinaten, bucketStart)] = item.Count;
+						if (!string.IsNullOrWhiteSpace(item.StandortKey))
+						{
+							countsByKeyBucket[(item.StandortKey!, bucketStart)] =
+								(countsByKeyBucket.TryGetValue((item.StandortKey!, bucketStart), out var value) ? value : 0)
+								+ item.Count;
+						}
+						else
+						{
+							countsByOrtBucket[(item.Beringungsort, bucketStart)] =
+								(countsByOrtBucket.TryGetValue((item.Beringungsort, bucketStart), out var value) ? value : 0)
+								+ item.Count;
+							countsByOrtKoordBucket[(item.Beringungsort, item.Koordinaten, bucketStart)] = item.Count;
+						}
 					}
 				}
 				else
@@ -450,18 +462,28 @@ namespace BeringungApi.Controllers
 					var counts = await _context.VogelErfassungen
 						.AsNoTracking()
 						.Where(v => v.Beringungsdatum >= startDate && v.Beringungsdatum < endExclusive)
-						.Where(v => standortNames.Contains(v.Beringungsort))
-						.GroupBy(v => new { v.Beringungsort, v.Koordinaten, v.Beringungsdatum.Year, v.Beringungsdatum.Month })
-						.Select(g => new { g.Key.Beringungsort, g.Key.Koordinaten, g.Key.Year, g.Key.Month, Count = g.Count() })
+						.Where(v => (v.StandortKey != null && standortKeys.Contains(v.StandortKey))
+							|| (string.IsNullOrEmpty(v.StandortKey) && standortNames.Contains(v.Beringungsort)))
+						.GroupBy(v => new { v.StandortKey, v.Beringungsort, v.Koordinaten, v.Beringungsdatum.Year, v.Beringungsdatum.Month })
+						.Select(g => new { g.Key.StandortKey, g.Key.Beringungsort, g.Key.Koordinaten, g.Key.Year, g.Key.Month, Count = g.Count() })
 						.ToListAsync();
 
 					foreach (var item in counts)
 					{
 						var bucketStart = new DateTime(item.Year, item.Month, 1);
-						countsByOrtBucket[(item.Beringungsort, bucketStart)] =
-							(countsByOrtBucket.TryGetValue((item.Beringungsort, bucketStart), out var value) ? value : 0)
-							+ item.Count;
-						countsByOrtKoordBucket[(item.Beringungsort, item.Koordinaten, bucketStart)] = item.Count;
+						if (!string.IsNullOrWhiteSpace(item.StandortKey))
+						{
+							countsByKeyBucket[(item.StandortKey!, bucketStart)] =
+								(countsByKeyBucket.TryGetValue((item.StandortKey!, bucketStart), out var value) ? value : 0)
+								+ item.Count;
+						}
+						else
+						{
+							countsByOrtBucket[(item.Beringungsort, bucketStart)] =
+								(countsByOrtBucket.TryGetValue((item.Beringungsort, bucketStart), out var value) ? value : 0)
+								+ item.Count;
+							countsByOrtKoordBucket[(item.Beringungsort, item.Koordinaten, bucketStart)] = item.Count;
+						}
 					}
 				}
 			}
@@ -469,18 +491,22 @@ namespace BeringungApi.Controllers
 			foreach (var standort in standorte)
 			{
 				var values = new List<int>(buckets.Count);
+				var standortKey = standort.Id.ToString();
 				foreach (var bucketStart in buckets)
 				{
 					int count;
-					if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
+					if (!countsByKeyBucket.TryGetValue((standortKey, bucketStart), out count))
 					{
-						countsByOrtKoordBucket.TryGetValue(
-							(standort.Standort, standort.Koordinaten, bucketStart),
-							out count);
-					}
-					else
-					{
-						countsByOrtBucket.TryGetValue((standort.Standort, bucketStart), out count);
+						if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
+						{
+							countsByOrtKoordBucket.TryGetValue(
+								(standort.Standort, standort.Koordinaten, bucketStart),
+								out count);
+						}
+						else
+						{
+							countsByOrtBucket.TryGetValue((standort.Standort, bucketStart), out count);
+						}
 					}
 
 					values.Add(count);
@@ -516,30 +542,34 @@ namespace BeringungApi.Controllers
 
 		private IQueryable<VogelErfassung> BuildStandortQuery(StandortDaten standort, int season)
 		{
+			var standortKey = standort.Id.ToString();
+			var hasKoordinaten = !string.IsNullOrWhiteSpace(standort.Koordinaten);
+
 			var query = _context.VogelErfassungen
 				.AsNoTracking()
 				.Where(v => v.Beringungsdatum.Year == season)
-				.Where(v => v.Beringungsort == standort.Standort);
-
-			if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
-			{
-				query = query.Where(v => v.Koordinaten == standort.Koordinaten);
-			}
+				.Where(v =>
+					v.StandortKey == standortKey
+					|| (string.IsNullOrEmpty(v.StandortKey)
+						&& v.Beringungsort == standort.Standort
+						&& (!hasKoordinaten || v.Koordinaten == standort.Koordinaten)));
 
 			return query;
 		}
 
 		private IQueryable<VogelErfassung> BuildStandortQuery(StandortDaten standort, DateTime startDate, DateTime endExclusive)
 		{
+			var standortKey = standort.Id.ToString();
+			var hasKoordinaten = !string.IsNullOrWhiteSpace(standort.Koordinaten);
+
 			var query = _context.VogelErfassungen
 				.AsNoTracking()
 				.Where(v => v.Beringungsdatum >= startDate && v.Beringungsdatum < endExclusive)
-				.Where(v => v.Beringungsort == standort.Standort);
-
-			if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
-			{
-				query = query.Where(v => v.Koordinaten == standort.Koordinaten);
-			}
+				.Where(v =>
+					v.StandortKey == standortKey
+					|| (string.IsNullOrEmpty(v.StandortKey)
+						&& v.Beringungsort == standort.Standort
+						&& (!hasKoordinaten || v.Koordinaten == standort.Koordinaten)));
 
 			return query;
 		}

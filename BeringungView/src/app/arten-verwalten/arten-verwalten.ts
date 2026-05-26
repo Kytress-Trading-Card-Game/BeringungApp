@@ -127,7 +127,7 @@ export class ArtenVerwalten {
 
     const artbezeichnung = this.selectedArt().trim();
     if (!artbezeichnung) {
-      this.errorMessage.set('Bitte zuerst eine Art auswaehlen.');
+      this.errorMessage.set('Bitte zuerst eine Art auswählen.');
       return;
     }
 
@@ -153,7 +153,7 @@ export class ArtenVerwalten {
         },
         error: () => {
           this.isUpdating.set(false);
-          this.errorMessage.set('Aenderungen konnten nicht gespeichert werden.');
+          this.errorMessage.set('Änderungen konnten nicht gespeichert werden.');
         },
       });
   }

@@ -70,7 +70,7 @@ export class VogelList {
     { value: 'ringnummer', label: 'Ringnummer' },
     { value: 'vogelart', label: 'Vogelart' },
     { value: 'gewicht', label: 'Gewicht' },
-    { value: 'fluegellaenge', label: 'Fluegellaenge' },
+    { value: 'fluegellaenge', label: 'Flügellänge' },
   ];
 
   private readonly query = computed<VogelErfassungQuery>(() => {

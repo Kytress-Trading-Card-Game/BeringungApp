@@ -18,6 +18,9 @@ namespace BeringungApi.Models
 		[MaxLength(200, ErrorMessage = "Der Ortsname darf maximal 200 Zeichen lang sein.")]
 		public string Beringungsort { get; set; } = string.Empty;
 
+		[MaxLength(36, ErrorMessage = "Standort-Key darf maximal 36 Zeichen lang sein.")]
+		public string? StandortKey { get; set; }
+
 		[Required(ErrorMessage = "Die Koordinaten der Beringung sind erforderlich.")]
 		[MaxLength(100, ErrorMessage = "Die Koordinaten dürfen maximal 100 Zeichen lang sein.")]
 		public string? Koordinaten { get; set; }

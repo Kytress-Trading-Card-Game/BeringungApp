@@ -203,7 +203,7 @@ export class VogelEintragungForm implements AfterViewInit {
             return;
           }
 
-          this.errorMessage.set('Speichern fehlgeschlagen. Bitte pruefe die Eingaben.');
+          this.errorMessage.set('Speichern fehlgeschlagen. Bitte prüfe die Eingaben.');
         },
       });
   }
@@ -690,7 +690,7 @@ export class VogelEintragungForm implements AfterViewInit {
     if (value < min || value > max) {
       control.setErrors({ range: true });
       control.markAsTouched();
-      this.errorMessage.set('Messwerte liegen ausserhalb der erlaubten Bereiche.');
+      this.errorMessage.set('Messwerte liegen außerhalb der erlaubten Bereiche.');
       return false;
     }
 

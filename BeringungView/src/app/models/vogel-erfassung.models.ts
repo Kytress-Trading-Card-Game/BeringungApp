@@ -28,6 +28,7 @@ export interface VogelErfassung {
   ringnummer: string;
   beringungsdatum: string;
   beringungsort: string;
+  standortKey?: string | null;
   koordinaten: string | null;
   wiederfang: boolean;
   vogelart?: string | null;
