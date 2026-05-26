@@ -1,0 +1,35 @@
+<div class="pointer-events-none fixed inset-x-0 top-4 z-50 px-4 sm:px-6 lg:px-8">
+	<div class="mx-auto flex w-full max-w-md flex-col gap-3 sm:ml-auto sm:mr-0">
+		@for (toast of toastService.toasts(); track toast.id) {
+			<article
+				class="toast-shell pointer-events-auto overflow-hidden rounded-[1.25rem] border backdrop-blur-xl"
+				[class.toast-shell--closing]="toast.closing"
+				[class]="typeClasses[toast.type]"
+			>
+				<div class="flex items-start gap-3 px-4 py-3">
+					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold" [class]="iconClasses[toast.type]">
+						{{ toast.type.slice(0, 1).toUpperCase() }}
+					</div>
+
+					<div class="min-w-0 flex-1 pt-0.5">
+						<p class="text-sm font-semibold tracking-wide text-[color:var(--ink-900)]">
+							{{ toast.type }}
+						</p>
+						<p class="mt-1 text-sm leading-6 text-[color:var(--ink-700)]">
+							{{ toast.message }}
+						</p>
+					</div>
+
+					<button
+						type="button"
+						class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--ink-500)] transition hover:bg-black/5 hover:text-[color:var(--ink-900)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-500)]/40"
+						(click)="toastService.dismiss(toast.id)"
+						[attr.aria-label]="'Toast schließen: ' + toast.message"
+					>
+						<span class="text-lg leading-none">×</span>
+					</button>
+				</div>
+			</article>
+		}
+	</div>
+</div>

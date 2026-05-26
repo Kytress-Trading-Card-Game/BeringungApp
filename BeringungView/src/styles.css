@@ -1,0 +1,35 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import 'tailwindcss';
+
+:root {
+	--page-bg: #F6F8FB;
+	--surface: #FFFFFF;
+	--surface-muted: #EEF2F7;
+	--surface-accent: #E8F1FF;
+
+	--ink-900: #0B1B2B;
+	--ink-700: #2A3B4F;
+	--ink-500: #5C6B7A;
+	--ink-300: #9AA7B5;
+
+	--brand-700: #1E4E8C;
+	--brand-500: #2A6ED8;
+	--brand-300: #86B0F8;
+	--brand-100: #E4EEFF;
+
+	--accent-700: #0F6D57;
+	--accent-500: #19A27B;
+	--accent-100: #E3F6EF;
+
+	--warning-500: #D97706;
+	--warning-100: #FEF3C7;
+	--danger-500: #DC2626;
+	--danger-100: #FEE2E2;
+}
+
+body {
+	font-family: "Gill Sans", sans-serif;
+	background-color: var(--page-bg);
+	color: var(--ink-900);
+}

@@ -1,0 +1,37 @@
+{
+  "name": "beringungelectron",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "koppitent",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+		"start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "electron": "^42.2.0"
+  },
+	"build": {
+    "appId": "de.koppy.beringungapp",
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "electron/preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../BeringungView/dist/BeringungView/browser",
+        "to": "frontend"
+      },
+      {
+        "from": "../BeringungApi/bin/Release/net10.0/win-x64/publish",
+        "to": "backend"
+      }
+    ]
+  }
+}

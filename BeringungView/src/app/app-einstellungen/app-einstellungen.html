@@ -1,0 +1,134 @@
+<section class="mx-auto w-full max-w-5xl px-6 pb-12 pt-10">
+	<div class="flex flex-col gap-6">
+		<div>
+			<header class="flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<p class="text-sm font-semibold text-[color:var(--ink-500)]">App Einstellungen</p>
+					<h2 class="mt-2 text-3xl font-semibold text-[color:var(--ink-900)]">Standorte verwalten</h2>
+					<p class="mt-2 text-sm text-[color:var(--ink-500)]">Lege Standorte an und wähle den aktiven Standort.</p>
+				</div>
+
+				<a routerLink="/"
+					class="rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] shadow-sm transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]">
+					Zurück
+				</a>
+			</header>
+			<div class="mt-4">
+				<a routerLink="/"
+					class="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-700)] transition hover:text-[color:var(--brand-900)]">
+					<span aria-hidden="true">←</span>
+					Zurück zum Dashboard
+				</a>
+			</div>
+		</div>
+
+		@if (errorMessage()) {
+		<div class="rounded-2xl bg-[#fee2e2] px-4 py-3 text-sm font-semibold text-[#b91c1c]" role="alert">
+			{{ errorMessage() }}
+		</div>
+		}
+
+		@if (isLoading()) {
+		<div class="rounded-3xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] p-6">
+			<p class="text-sm font-semibold text-[color:var(--ink-700)]">Lade Einstellungen...</p>
+		</div>
+		} @else {
+		<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+			<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Aktiver Standort</h3>
+			<p class="mt-2 text-sm text-[color:var(--ink-500)]">
+				@if (settings()?.activeStandortId) {
+				Aktuell aktiv: {{ settings()?.activeStandort?.standort || 'Standort laden...' }}
+				} @else {
+				Kein aktiver Standort gesetzt.
+				}
+			</p>
+		</section>
+
+		<section class="grid gap-6 lg:grid-cols-[2fr_1fr]">
+			<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+				<div class="flex items-center justify-between">
+					<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Vorhandene Standorte</h3>
+				</div>
+				<div class="mt-4 space-y-3">
+					@if (standorte().length === 0) {
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+						<p class="text-sm font-semibold text-[color:var(--ink-700)]">Noch keine Standorte vorhanden.</p>
+					</div>
+					} @else {
+					@for (standort of standorte(); track standort.id) {
+					<div
+						class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+						<div>
+							<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ standort.standort }}</p>
+							<p class="text-xs text-[color:var(--ink-500)]">
+								{{ standort.koordinaten || 'Keine Koordinaten' }}
+							</p>
+						</div>
+						<div class="flex flex-wrap items-center gap-2">
+							@if (settings()?.activeStandortId === standort.id) {
+							<span
+								class="rounded-full bg-[color:var(--brand-100)] px-3 py-1 text-xs font-semibold text-[color:var(--brand-700)]">
+								Aktiv
+							</span>
+							} @else {
+							<button type="button"
+								class="rounded-full border border-[color:var(--surface-muted)] bg-white px-3 py-1 text-xs font-semibold text-[color:var(--ink-700)]"
+								[disabled]="isUpdatingActive()" (click)="setActiveStandort(standort.id)">
+								Aktiv setzen
+							</button>
+							}
+							<button type="button"
+								class="rounded-full border border-[color:var(--surface-muted)] bg-white px-3 py-1 text-xs font-semibold text-[color:var(--danger-500)]"
+								[disabled]="deletingId() === standort.id" (click)="deleteStandort(standort.id)">
+								Löschen
+							</button>
+						</div>
+					</div>
+					}
+					}
+				</div>
+			</div>
+
+			<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+				<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Neuen Standort anlegen</h3>
+				<form class="mt-4 grid gap-4" [formGroup]="standortForm" (ngSubmit)="createStandort()">
+					<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+						<span>Standort</span>
+						<input
+							class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+							formControlName="standort" placeholder="Linden Grove" type="text" />
+					</label>
+					<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+						<span>Koordinaten</span>
+						<input
+							class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+							formControlName="koordinaten" placeholder="47.3769, 8.5417" type="text" />
+					</label>
+					<button type="submit"
+						class="rounded-2xl bg-[color:var(--accent-500)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--accent-700)] disabled:cursor-not-allowed disabled:opacity-70"
+						[disabled]="standortForm.invalid || isCreating()">
+						@if (isCreating()) {
+						Speichern...
+						} @else {
+						Standort speichern
+						}
+					</button>
+				</form>
+			</div>
+		</section>
+
+		<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+			<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Arten einstellen</h3>
+			<p class="mt-2 text-sm text-[color:var(--ink-500)]">
+				Pflege die Artenliste und passe die verfügbaren Arten für die Erfassung an.
+			</p>
+			<a
+				routerLink="/arten"
+				class="mt-4 inline-flex items-center gap-2 rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface-muted)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)] hover:bg-[color:var(--brand-50)] hover:text-[color:var(--brand-700)]">
+				<span>Arten verwalten</span>
+				<span aria-hidden="true">→</span>
+			</a>
+		</section>
+		}
+	</div>
+</section>

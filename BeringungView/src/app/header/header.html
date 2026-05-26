@@ -1,0 +1,31 @@
+<header class="border-b border-[color:var(--surface-muted)] bg-[color:var(--surface)]">
+	<div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-6 px-6 py-5">
+		<a class="flex items-center gap-3" routerLink="/">
+			<div
+				class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--brand-100)] text-[color:var(--brand-700)]">
+				<span class="text-lg font-semibold">VB</span>
+			</div>
+			<div>
+				<p class="text-sm font-semibold uppercase tracking-widest text-[color:var(--ink-500)]">Beringung</p>
+				<h1 class="text-2xl font-semibold text-[color:var(--ink-900)]">Vogel Dashboard</h1>
+			</div>
+		</a>
+		<div class="flex items-center gap-3">
+			<a
+				routerLink="/einstellungen"
+				class="rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] shadow-sm transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]">
+				Einstellungen
+			</a>
+			<button
+				class="rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] shadow-sm transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]">
+				Export
+			</button>
+			<button
+				type="button"
+				class="rounded-full bg-[color:var(--brand-500)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--brand-700)]"
+				(click)="openModal()">
+				Vogel beringen
+			</button>
+		</div>
+	</div>
+</header>

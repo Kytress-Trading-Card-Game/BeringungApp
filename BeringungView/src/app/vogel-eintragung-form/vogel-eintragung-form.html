@@ -1,0 +1,172 @@
+@if (!isServerIssuesOpen()) {
+<form class="grid gap-5" [formGroup]="form" (ngSubmit)="submit()">
+	@if (errorMessage()) {
+		<div class="rounded-xl bg-[#fee2e2] px-4 py-3 text-sm font-semibold text-[#b91c1c]" role="alert">
+			{{ errorMessage() }}
+		</div>
+	}
+
+	<div class="rounded-xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 mt-4">
+		<p class="text-xs font-semibold text-[color:var(--ink-500)]">Aktiver Standort</p>
+		@if (isLoadingSettings()) {
+			<p class="mt-1 text-sm font-semibold text-[color:var(--ink-700)]">Lade Standort...</p>
+		} @else if (settings()?.activeStandort) {
+			<p class="mt-1 text-sm font-semibold text-[color:var(--ink-900)]">
+				{{ settings()?.activeStandort?.standort }}
+			</p>
+			<p class="text-xs text-[color:var(--ink-500)]">
+				{{ settings()?.activeStandort?.koordinaten || 'Keine Koordinaten' }}
+			</p>
+		} @else {
+			<p class="mt-1 text-sm font-semibold text-[color:var(--ink-700)]">Kein aktiver Standort gesetzt.</p>
+		}
+		<a
+			routerLink="/einstellungen"
+			class="mt-2 inline-flex text-xs font-semibold text-[color:var(--brand-700)] hover:text-[color:var(--brand-500)]">
+			In den Einstellungen ändern
+		</a>
+	</div>
+
+	<div class="grid gap-4 sm:grid-cols-2">
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Ringnummer</span>
+			<input
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				id="ringnummer"
+				formControlName="Ringnummer"
+				placeholder="3A-119"
+				autofocus
+				(input)="onRingnummerInput($any($event.target).value)"
+				(blur)="onRingnummerBlur($any($event.target).value)"
+				(keydown)="onRingnummerKeydown($event)"
+				type="text" />
+		</label>
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Beringungsdatum</span>
+			<input
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				formControlName="Beringungsdatum"
+				type="datetime-local" />
+		</label>
+		<label class="flex items-center gap-3 rounded-xl border border-[color:var(--surface-muted)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm font-semibold text-[color:var(--ink-700)]">
+			<input class="h-4 w-4" formControlName="Wiederfang" type="checkbox" />
+			<span>Wiederfang</span>
+		</label>
+		<div class="relative grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<label class="grid gap-2">
+				<span>Vogelart</span>
+				<input
+					class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+					id="vogelart"
+					formControlName="Vogelart"
+					placeholder="Blackbird"
+					type="text"
+					(input)="onVogelartInput($any($event.target).value)"
+					(focus)="onVogelartFocus()"
+					(blur)="onVogelartBlur()"
+					(keydown)="onVogelartKeydown($event)" />
+			</label>
+			@if (showArtSuggestions()) {
+				<div class="absolute left-0 right-0 top-[100%] z-10 mt-1 rounded-xl border border-[color:var(--surface-muted)] bg-white shadow-lg">
+					@if (isLoadingArten()) {
+						<div class="px-4 py-3 text-xs font-semibold text-[color:var(--ink-500)]">Lade Vorschlaege...</div>
+					} @else if (filteredArtSuggestions().length === 0) {
+						<div class="px-4 py-3 text-xs font-semibold text-[color:var(--ink-500)]">Keine passenden Arten</div>
+					} @else {
+						@for (item of filteredArtSuggestions(); track item.key) {
+							<button
+								type="button"
+								class="flex w-full items-center justify-between px-4 py-2 text-left text-sm font-semibold text-[color:var(--ink-900)] hover:bg-[color:var(--surface-muted)]"
+								(mousedown)="$event.preventDefault(); applyArtSuggestion(item.key)">
+								<span>{{ item.key }}</span>
+								<span class="text-xs font-semibold text-[color:var(--ink-500)]">{{ item.count }}</span>
+							</button>
+						}
+					}
+				</div>
+			}
+		</div>
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Gewicht (g)</span>
+			<input
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				id="gewicht"
+				formControlName="Gewicht"
+				inputmode="decimal"
+				placeholder="z.B. 21,5"
+				(input)="onGewichtInput($any($event.target).value)"
+				(keydown)="onGewichtKeydown($event)"
+				type="text" />
+		</label>
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Flügellänge (mm)</span>
+			<input
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				id="fluegellaenge"
+				formControlName="Fluegellaenge"
+				inputmode="decimal"
+				placeholder="z.B. 45,0"
+				(input)="onFluegellaengeInput($any($event.target).value)"
+				(keydown)="onFluegellaengeKeydown($event)"
+				type="text" />
+		</label>
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Geschlecht</span>
+			<select
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				id="geschlecht"
+				(change)="onGeschlechtChange()"
+				(keydown)="onGeschlechtKeydown($event)"
+				formControlName="Geschlecht">
+				@for (option of geschlechter; track option.value) {
+					<option [ngValue]="option.value">{{ option.label }}</option>
+				}
+			</select>
+		</label>
+		<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+			<span>Alter</span>
+			<select
+				class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+				id="alter"
+				(change)="onAlterChange()"
+				(keydown)="onAlterKeydown($event)"
+				formControlName="Alter">
+				@for (option of alterStufen; track option.value) {
+					<option [ngValue]="option.value">{{ option.label }}</option>
+				}
+			</select>
+		</label>
+	</div>
+
+	<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+		<span>Bemerkungen</span>
+		<textarea
+			class="min-h-[120px] rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+			formControlName="Bemerkungen"
+			placeholder="Gesund, starker Flug, nach Check freigelassen."></textarea>
+	</label>
+
+	<div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+		<button
+			type="button"
+			class="rounded-xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)]"
+			(click)="cancel()">
+			Abbrechen
+		</button>
+		<button
+			type="submit"
+			class="rounded-xl bg-[color:var(--accent-500)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--accent-700)] disabled:cursor-not-allowed disabled:opacity-70"
+			id="save-button"
+			(keydown)="onSaveKeydown($event)"
+			[disabled]="form.invalid || isSaving()">
+			@if (isSaving()) {
+				Speichern...
+			} @else {
+				Vogel speichern
+			}
+		</button>
+	</div>
+</form>
+}
+
+<!-- server issues modal is rendered into document.body via a DOM portal to avoid nested stacking/context issues -->

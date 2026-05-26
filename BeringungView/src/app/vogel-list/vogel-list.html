@@ -1,0 +1,290 @@
+<section class="mx-auto w-full max-w-6xl px-6 pb-12 pt-8">
+	<header class="flex flex-wrap items-center justify-between gap-4">
+		<div>
+			<p class="text-sm font-semibold text-[color:var(--ink-500)]">Übersicht</p>
+			<h1 class="mt-2 text-3xl font-semibold text-[color:var(--ink-900)]">Alle beringten Vögel</h1>
+			<p class="mt-2 text-sm text-[color:var(--ink-500)]">Filter, sortiere und paginiere alle Einträge.</p>
+		</div>
+		<button
+			type="button"
+			class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)]"
+			(click)="resetFilters()">
+			Filter zurücksetzen
+		</button>
+	</header>
+
+	<div class="mt-4">
+		<a
+			routerLink="/"
+			class="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--brand-700)] transition hover:text-[color:var(--brand-900)]">
+			<span aria-hidden="true">←</span>
+			Zurück zum Dashboard
+		</a>
+	</div>
+
+	<section class="mt-6 rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+		<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Ringnummer
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="ringnummerPrefix()"
+					(change)="updateRingnummerPrefix(getSelectValue($event))">
+					<option value="">Alle</option>
+					<option value="A">A</option>
+					<option value="B">B</option>
+					<option value="C">C</option>
+					<option value="D">D</option>
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Standort
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="standort()"
+					(change)="updateStandort(getSelectValue($event))">
+					<option value="">Alle</option>
+					@for (item of standorte(); track item.id) {
+						<option [value]="item.standort">{{ item.standort }}</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Toparten
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="vogelart()"
+					(change)="updateVogelart(getSelectValue($event))">
+					<option value="">Alle</option>
+					@for (item of topArten(); track item.key) {
+						<option [value]="item.key">{{ item.key }}</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Wiederfang
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="wiederfang()"
+					(change)="updateWiederfangFromSelect(getSelectValue($event))">
+					<option value="all">Alle</option>
+					<option value="true">Wiederfang</option>
+					<option value="false">Erstberingung</option>
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Geschlecht
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="geschlecht()"
+					(change)="updateGeschlechtFromSelect(getSelectValue($event))">
+					<option value="all">Alle</option>
+					<option value="0">Unbekannt</option>
+					<option value="1">Männlich</option>
+					<option value="2">Weiblich</option>
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Alter
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="alter()"
+					(change)="updateAlterFromSelect(getSelectValue($event))">
+					<option value="all">Alle</option>
+					<option value="0">Unbekannt</option>
+					<option value="1">Diesjährig</option>
+					<option value="2">Nichtdiesjährig</option>
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Min. Gewicht (g)
+				<input
+					type="number"
+					min="0"
+					step="0.1"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="minGewicht()"
+					(change)="updateMinGewicht(getInputValue($event))"
+					placeholder="z.B. 12.5" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Max. Gewicht (g)
+				<input
+					type="number"
+					min="0"
+					step="0.1"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="maxGewicht()"
+					(change)="updateMaxGewicht(getInputValue($event))"
+					placeholder="z.B. 24.0" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Min. Flügellänge (mm)
+				<input
+					type="number"
+					min="0"
+					step="0.1"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="minFluegellaenge()"
+					(change)="updateMinFluegellaenge(getInputValue($event))"
+					placeholder="z.B. 55" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Max. Flügellänge (mm)
+				<input
+					type="number"
+					min="0"
+					step="0.1"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="maxFluegellaenge()"
+					(change)="updateMaxFluegellaenge(getInputValue($event))"
+					placeholder="z.B. 70" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Von Datum
+				<input
+					type="date"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="vonDatum()"
+					  (change)="updateVonDatum(getInputValue($event))" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Bis Datum
+				<input
+					type="date"
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="bisDatum()"
+					  (change)="updateBisDatum(getInputValue($event))" />
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Sortierung
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="sortBy()"
+					(change)="updateSortBy(getSelectValue($event))">
+					@for (option of sortOptions; track option.value) {
+						<option [value]="option.value">{{ option.label }}</option>
+					}
+				</select>
+			</label>
+
+			<label class="space-y-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Richtung
+				<select
+					class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="sortDirection()"
+					(change)="updateSortDirectionFromSelect(getSelectValue($event))">
+					<option value="desc">Absteigend</option>
+					<option value="asc">Aufsteigend</option>
+				</select>
+			</label>
+		</div>
+	</section>
+
+	<section class="mt-6 rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<div class="text-sm font-semibold text-[color:var(--ink-500)]">
+				Gesamt: {{ vogels().totalCount }} Einträge
+			</div>
+			<label class="flex items-center gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+				Seitengröße
+				<select
+					class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-3 py-2 text-sm text-[color:var(--ink-900)]"
+					[value]="pageSize()"
+					  (change)="updatePageSize(getSelectValue($event))">
+					<option [value]="5">5</option>
+					<option [value]="10">10</option>
+					<option [value]="20">20</option>
+					<option [value]="25">25</option>
+					<option [value]="50">50</option>
+				</select>
+			</label>
+		</div>
+
+		<div class="mt-4 overflow-x-auto rounded-2xl border border-[color:var(--surface-muted)]">
+			<table class="min-w-full border-collapse text-left text-sm">
+				<thead class="bg-[color:var(--surface-muted)] text-[color:var(--ink-600)]">
+					<tr>
+						<th class="px-4 py-3 font-semibold">Ringnummer</th>
+						<th class="px-4 py-3 font-semibold">Vogelart</th>
+						<th class="px-4 py-3 font-semibold">Beringungsdatum</th>
+						<th class="px-4 py-3 font-semibold">Ort</th>
+						<th class="px-4 py-3 font-semibold">Gewicht</th>
+						<th class="px-4 py-3 font-semibold">Flügellänge</th>
+						<th class="px-4 py-3 font-semibold">Geschlecht</th>
+						<th class="px-4 py-3 font-semibold">Alter</th>
+						<th class="px-4 py-3 font-semibold">Typ</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-[color:var(--surface-muted)]">
+					@if (isLoading()) {
+						<tr>
+							<td class="px-4 py-4 text-sm text-[color:var(--ink-600)]" colspan="9">Lade Daten...</td>
+						</tr>
+					} @else if (error()) {
+						<tr>
+							<td class="px-4 py-4 text-sm text-[color:var(--danger-600)]" colspan="9">{{ error() }}</td>
+						</tr>
+					} @else if (vogels().data.length === 0) {
+						<tr>
+							<td class="px-4 py-4 text-sm text-[color:var(--ink-600)]" colspan="9">Keine Einträge gefunden.</td>
+						</tr>
+					} @else {
+						@for (vogel of vogels().data; track vogel.id) {
+							<tr class="bg-white">
+								<td class="px-4 py-3 font-semibold text-[color:var(--ink-900)]">{{ vogel.ringnummer }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ vogel.vogelart || 'Unbekannt' }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ formatDate(vogel.beringungsdatum) }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ vogel.beringungsort || 'Unbekannt' }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ formatGewicht(vogel.gewicht) }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ formatFluegellaenge(vogel.fluegellaenge) }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ formatGeschlecht(vogel.geschlecht) }}</td>
+								<td class="px-4 py-3 text-[color:var(--ink-700)]">{{ formatAlter(vogel.alter) }}</td>
+								<td class="px-4 py-3">
+									<span
+										class="rounded-full bg-[color:var(--brand-100)] px-3 py-1 text-xs font-semibold text-[color:var(--brand-700)]">
+										{{ vogel.wiederfang ? 'Wiederfang' : 'Erstberingung' }}
+									</span>
+								</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+			<p class="text-sm font-semibold text-[color:var(--ink-500)]">
+				Seite {{ vogels().page }} von {{ vogels().totalPages || 1 }}
+			</p>
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] disabled:opacity-40"
+					[disabled]="!canPrev()"
+					(click)="setPage(vogels().page - 1)">
+					Zurück
+				</button>
+				<button
+					type="button"
+					class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-2 text-sm font-semibold text-[color:var(--ink-700)] disabled:opacity-40"
+					[disabled]="!canNext()"
+					(click)="setPage(vogels().page + 1)">
+					Weiter
+				</button>
+			</div>
+		</div>
+	</section>
+</section>

@@ -1,0 +1,22 @@
+.toast-shell {
+	max-height: 9rem;
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	margin-bottom: 0;
+	transition-property: max-height, opacity, transform, margin-bottom;
+	transition-duration: 380ms;
+	transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+	will-change: max-height, opacity, transform, margin-bottom;
+}
+
+.toast-shell + .toast-shell {
+	margin-top: 0.75rem;
+}
+
+.toast-shell--closing {
+	max-height: 0;
+	opacity: 0;
+	transform: translateY(-0.5rem) scale(0.985);
+	margin-top: 0;
+	margin-bottom: 0;
+}

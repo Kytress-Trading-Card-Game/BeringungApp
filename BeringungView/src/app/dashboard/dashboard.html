@@ -1,0 +1,199 @@
+<section class="mx-auto w-full max-w-6xl px-6 pb-10 pt-8">
+	<div class="grid gap-6 lg:grid-cols-[2fr_1fr]">
+		<div class="space-y-6">
+			<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+				<div class="flex items-center justify-between">
+					<div>
+						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Beringungen in dieser Saison ({{ currentSeason }})</p>
+						<h2 class="mt-2 text-3xl font-semibold text-[color:var(--ink-900)]">
+							{{ stats()?.totalCurrentSeason ?? 0 }} Vögel beringt
+						</h2>
+						<p class="mt-2 text-sm text-[color:var(--ink-500)]">Behalte alle Informationen über deine Beringungen in einer Übersicht im Auge.</p>
+						<p class="mt-2 text-xs font-semibold text-[color:var(--ink-500)]">
+							@if (activeStandortName()) {
+								Aktiver Standort: {{ activeStandortName() }}
+							} @else {
+								Kein aktiver Standort gesetzt.
+							}
+						</p>
+					</div>
+					<div
+						class="inline-flex min-h-[3.5rem] min-w-[3.5rem] items-center justify-center rounded-3xl bg-[color:var(--brand-100)] px-3 py-2 text-[color:var(--brand-700)]">
+						<span class="text-2xl font-semibold">{{ formatPercent(stats()?.deltaPercent) }}</span>
+					</div>
+				</div>
+				@if (statsError()) {
+					<p class="mt-3 text-sm font-semibold text-[color:var(--danger-500)]">{{ statsError() }}</p>
+				}
+				@if (isStatsLoading()) {
+					<p class="mt-3 text-sm font-semibold text-[color:var(--ink-700)]">Lade Statistiken...</p>
+				}
+				<div class="mt-6 grid gap-4 sm:grid-cols-3">
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] p-4">
+						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Saison gesamt</p>
+						<p class="mt-3 text-2xl font-semibold text-[color:var(--ink-900)]">
+							{{ stats()?.totalCurrentSeason ?? 0 }}
+						</p>
+						<p class="mt-1 text-xs text-[color:var(--ink-500)]">Aktuelle Saison</p>
+					</div>
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] p-4">
+						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Vorjahr</p>
+						<p class="mt-3 text-2xl font-semibold text-[color:var(--ink-900)]">
+							{{ stats()?.totalPreviousSeason ?? 0 }}
+						</p>
+						<p class="mt-1 text-xs text-[color:var(--ink-500)]">Letzte Saison</p>
+					</div>
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] p-4">
+						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Wiederfang</p>
+						<p class="mt-3 text-2xl font-semibold text-[color:var(--ink-900)]">
+							{{ stats()?.wiederfangCount ?? 0 }}
+						</p>
+						<p class="mt-1 text-xs text-[color:var(--ink-500)]">
+							{{ formatPercent(stats()?.wiederfangPercent) }} der Saison
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="grid gap-6 lg:grid-cols-2">
+				<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+					<div class="flex items-center justify-between">
+						<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Zuletzt Beringt</h3>
+						<a
+							routerLink="/voegel"
+							class="text-sm font-semibold text-[color:var(--brand-700)] transition hover:text-[color:var(--brand-900)]">
+							Alle anzeigen
+						</a>
+					</div>
+					<div class="mt-4 space-y-3">
+						@if (recentVogels().data.length === 0) {
+							<div class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+								<p class="text-sm font-semibold text-[color:var(--ink-700)]">Noch keine Vögel beringt.</p>
+							</div>
+						} @else {
+							@for (vogel of recentVogels().data; track vogel.id) {
+								<div
+									class="flex items-center justify-between rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+									<div>
+										<p class="text-sm font-semibold text-[color:var(--ink-900)]">Ring ID {{ vogel.ringnummer }}</p>
+										<p class="text-xs text-[color:var(--ink-500)]">
+											{{ vogel.vogelart || 'Unbekannte Art' }} - {{ vogel.beringungsort || 'Unbekannter Ort' }}
+										</p>
+									</div>
+									<span
+										class="rounded-full bg-[color:var(--brand-100)] px-3 py-1 text-xs font-semibold text-[color:var(--brand-700)]">
+										{{ vogel.wiederfang ? 'Wiederfang' : 'Erstberingung' }}
+									</span>
+								</div>
+							}
+						}
+					</div>
+				</div>
+
+				<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+					<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Durchschnittswerte</h3>
+					<div class="mt-4 space-y-4">
+						<div class="rounded-2xl bg-[color:var(--surface-accent)] px-4 py-3">
+							<p class="text-xs font-semibold text-[color:var(--ink-500)]">Durchschnitt Gewicht</p>
+							<p class="text-lg font-semibold text-[color:var(--ink-900)]">
+								{{ formatNumber(stats()?.durchschnittGewicht, 'g') }}
+							</p>
+						</div>
+						<div class="rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3">
+							<p class="text-xs font-semibold text-[color:var(--ink-500)]">Durchschnitt Flügellänge</p>
+							<p class="text-lg font-semibold text-[color:var(--ink-900)]">
+								{{ formatNumber(stats()?.durchschnittFluegellaenge, 'mm') }}
+							</p>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<aside class="space-y-6">
+			<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+				<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Neuen Vogel beringen</h3>
+				<p class="mt-2 text-sm text-[color:var(--ink-500)]">Beringe einen neuen Vogel.</p>
+				<button
+					type="button"
+					class="mt-4 w-full rounded-2xl bg-[color:var(--accent-500)] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--accent-700)]"
+					(click)="openModal()">
+					Neuen Vogel beringen
+				</button>
+			</section>
+
+			<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+				<div class="flex items-center justify-between">
+					<h3 class="text-lg font-semibold text-[color:var(--ink-900)]">Schnellübersicht</h3>
+					<a
+						routerLink="/arten"
+						class="text-sm font-semibold text-[color:var(--brand-700)] transition hover:text-[color:var(--brand-900)]">
+						Arten verwalten
+					</a>
+				</div>
+				<div class="mt-4 space-y-4">
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+						<p class="text-xs font-semibold text-[color:var(--ink-500)]">Top Arten</p>
+						@if (stats()?.topArten?.length) {
+							@for (item of stats()?.topArten; track item.key) {
+								<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ item.key }} ({{ item.count }})</p>
+							}
+						} @else {
+							<p class="text-sm font-semibold text-[color:var(--ink-700)]">Keine Daten</p>
+						}
+					</div>
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+						<p class="text-xs font-semibold text-[color:var(--ink-500)]">Geschlecht</p>
+						@if (stats()?.geschlechtVerteilung?.length) {
+							@for (item of stats()?.geschlechtVerteilung; track item.key) {
+								<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ item.key }} ({{ item.count }})</p>
+							}
+						} @else {
+							<p class="text-sm font-semibold text-[color:var(--ink-700)]">Keine Daten</p>
+						}
+					</div>
+					<div class="rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
+						<p class="text-xs font-semibold text-[color:var(--ink-500)]">Alter</p>
+						@if (stats()?.alterVerteilung?.length) {
+							@for (item of stats()?.alterVerteilung; track item.key) {
+								<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ item.key }} ({{ item.count }})</p>
+							}
+						} @else {
+							<p class="text-sm font-semibold text-[color:var(--ink-700)]">Keine Daten</p>
+						}
+					</div>
+				</div>
+			</section>
+		</aside>
+	</div>
+</section>
+
+@if (isModalOpen()) {
+	<div class="modal-backdrop" role="presentation" (click)="closeModal()"></div>
+	<div class="modal-shell" role="dialog" aria-modal="true" aria-labelledby="vogel-modal-title">
+		<div class="modal-card">
+			<div class="modal-header">
+				<div>
+					<h3 id="vogel-modal-title" class="text-xl font-semibold text-[color:var(--ink-900)]">Save new Vogel</h3>
+					<p class="mt-1 text-sm text-[color:var(--ink-500)]">Fill in the ringing details for this bird.</p>
+				</div>
+				<button
+					type="button"
+					class="modal-close"
+					aria-label="Close"
+					(click)="closeModal()">
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<path
+							d="M6 6l12 12M18 6l-12 12"
+							fill="none"
+							stroke="currentColor"
+							stroke-linecap="round"
+							stroke-width="2" />
+					</svg>
+				</button>
+			</div>
+
+			<app-vogel-eintragung-form />
+		</div>
+	</div>
+}
