@@ -69,4 +69,21 @@ namespace BeringungApi.Dtos
 
 		public List<StatKeyValue> Items { get; set; } = new();
 	}
+
+	public class StatsTrendResponse
+	{
+		public DateTime FromDate { get; set; }
+		public DateTime ToDate { get; set; }
+		public string Bucket { get; set; } = string.Empty;
+		public int MaxValue { get; set; }
+		public List<string> Labels { get; set; } = new();
+		public List<StatsTrendSeriesResponse> Series { get; set; } = new();
+	}
+
+	public class StatsTrendSeriesResponse
+	{
+		public Guid StandortId { get; set; }
+		public string StandortName { get; set; } = string.Empty;
+		public List<int> Values { get; set; } = new();
+	}
 }

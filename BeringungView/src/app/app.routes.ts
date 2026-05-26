@@ -3,6 +3,7 @@ import { Dashboard } from './dashboard/dashboard';
 import { AppEinstellungen } from './app-einstellungen/app-einstellungen';
 import { VogelList } from './vogel-list/vogel-list';
 import { ArtenVerwalten } from './arten-verwalten/arten-verwalten';
+import { Statistiken } from './statistiken/statistiken';
 
 export const routes: Routes = [
 	{
@@ -20,5 +21,9 @@ export const routes: Routes = [
 	{
 		path: 'arten',
 		component: ArtenVerwalten
+	},
+	{
+		path: 'statistiken',
+		component: Statistiken
 	}
 ];

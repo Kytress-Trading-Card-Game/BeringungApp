@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using BeringungApi.Data;
 using BeringungApi.Dtos;
 using BeringungApi.Models;
+using System.Globalization;
 
 namespace BeringungApi.Controllers
 {
@@ -262,6 +263,119 @@ namespace BeringungApi.Controllers
 			};
 		}
 
+		// GET: api/Stats/trend?fromDate=2026-01-01&toDate=2026-05-26&bucket=month&standortIds=...
+		[HttpGet("trend")]
+		public async Task<ActionResult<StatsTrendResponse>> GetTrend(
+			[FromQuery] DateTime? fromDate,
+			[FromQuery] DateTime? toDate,
+			[FromQuery] string? bucket,
+			[FromQuery] List<Guid>? standortIds)
+		{
+			var bucketMode = string.IsNullOrWhiteSpace(bucket)
+				? "month"
+				: bucket.Trim().ToLowerInvariant();
+
+			if (bucketMode is not ("month" or "year"))
+			{
+				return BadRequest("Ungueltige Zeitauflösung.");
+			}
+
+			var startDate = (fromDate ?? new DateTime(DateTime.UtcNow.Year, 1, 1)).Date;
+			var endDate = (toDate ?? DateTime.UtcNow.Date).Date;
+
+			if (endDate < startDate)
+			{
+				return BadRequest("Das Enddatum muss nach dem Startdatum liegen.");
+			}
+
+			var selectedStandorteQuery = _context.StandortDaten
+				.AsNoTracking()
+				.OrderBy(s => s.Standort)
+				.AsQueryable();
+
+			if (standortIds is { Count: > 0 })
+			{
+				selectedStandorteQuery = selectedStandorteQuery.Where(s => standortIds.Contains(s.Id));
+			}
+
+			var standorte = await selectedStandorteQuery.ToListAsync();
+			if (standorte.Count == 0)
+			{
+				return Ok(new StatsTrendResponse
+				{
+					FromDate = startDate,
+					ToDate = endDate,
+					Bucket = bucketMode,
+					MaxValue = 0,
+					Labels = new List<string>(),
+					Series = new List<StatsTrendSeriesResponse>()
+				});
+			}
+
+			var buckets = BuildTrendBuckets(startDate, endDate, bucketMode);
+			var labels = buckets.Select(bucketStart => FormatTrendLabel(bucketStart, bucketMode)).ToList();
+			var series = new List<StatsTrendSeriesResponse>();
+			var maxValue = 0;
+			var endExclusive = endDate.AddDays(1);
+
+			foreach (var standort in standorte)
+			{
+				var query = BuildStandortQuery(standort, startDate, endExclusive);
+				var countsByBucket = new Dictionary<DateTime, int>();
+
+				if (bucketMode == "year")
+				{
+					var counts = await query
+						.GroupBy(v => v.Beringungsdatum.Year)
+						.Select(g => new { Year = g.Key, Count = g.Count() })
+						.ToListAsync();
+
+					foreach (var item in counts)
+					{
+						countsByBucket[new DateTime(item.Year, 1, 1)] = item.Count;
+					}
+				}
+				else
+				{
+					var counts = await query
+						.GroupBy(v => new { v.Beringungsdatum.Year, v.Beringungsdatum.Month })
+						.Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+						.ToListAsync();
+
+					foreach (var item in counts)
+					{
+						countsByBucket[new DateTime(item.Year, item.Month, 1)] = item.Count;
+					}
+				}
+
+				var values = buckets
+					.Select(bucketStart => countsByBucket.TryGetValue(bucketStart, out var count) ? count : 0)
+					.ToList();
+
+				if (values.Count > 0)
+				{
+					maxValue = Math.Max(maxValue, values.Max());
+				}
+
+				series.Add(new StatsTrendSeriesResponse
+				{
+					StandortId = standort.Id,
+					StandortName = standort.Standort,
+					Values = values
+				});
+			}
+
+			return Ok(new StatsTrendResponse
+			{
+				FromDate = startDate,
+				ToDate = endDate,
+				Bucket = bucketMode,
+				MaxValue = maxValue,
+				Labels = labels,
+				Series = series
+			});
+		}
+
 		private IQueryable<VogelErfassung> BuildStandortQuery(StandortDaten standort, int season)
 		{
 			var query = _context.VogelErfassungen
@@ -274,6 +388,48 @@ namespace BeringungApi.Controllers
 			}
 
 			return query;
+		}
+
+		private IQueryable<VogelErfassung> BuildStandortQuery(StandortDaten standort, DateTime startDate, DateTime endExclusive)
+		{
+			var query = _context.VogelErfassungen
+				.AsNoTracking()
+				.Where(v => v.Beringungsdatum >= startDate && v.Beringungsdatum < endExclusive)
+				.Where(v => v.Beringungsort == standort.Standort);
+
+			if (!string.IsNullOrWhiteSpace(standort.Koordinaten))
+			{
+				query = query.Where(v => v.Koordinaten == standort.Koordinaten);
+			}
+
+			return query;
+		}
+
+		private static List<DateTime> BuildTrendBuckets(DateTime startDate, DateTime endDate, string bucketMode)
+		{
+			var buckets = new List<DateTime>();
+			var current = bucketMode == "year"
+				? new DateTime(startDate.Year, 1, 1)
+				: new DateTime(startDate.Year, startDate.Month, 1);
+			var endBucket = bucketMode == "year"
+				? new DateTime(endDate.Year, 1, 1)
+				: new DateTime(endDate.Year, endDate.Month, 1);
+
+			while (current <= endBucket)
+			{
+				buckets.Add(current);
+				current = bucketMode == "year" ? current.AddYears(1) : current.AddMonths(1);
+			}
+
+			return buckets;
+		}
+
+		private static string FormatTrendLabel(DateTime bucketStart, string bucketMode)
+		{
+			var culture = CultureInfo.GetCultureInfo("de-DE");
+			return bucketMode == "year"
+				? bucketStart.ToString("yyyy", culture)
+				: bucketStart.ToString("MMM yyyy", culture);
 		}
 
 		private async Task<(StandortDaten? standort, ActionResult? errorResult)> ValidateInputsAsync(Guid standortId, int season)

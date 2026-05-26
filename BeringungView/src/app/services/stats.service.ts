@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import {
   StatsAveragesResponse,
   StatsListResponse,
+  StatsTrendQuery,
+  StatsTrendResponse,
   StatsSeasonResponse,
   StatsTotalsResponse,
   StatsWiederfangResponse,
@@ -56,5 +58,27 @@ export class StatsService {
     return this.http.get<StatsListResponse>(
       `${this.baseUrl}/alter?standortId=${standortId}&season=${season}`,
     );
+  }
+
+  getTrend(query: StatsTrendQuery): Observable<StatsTrendResponse> {
+    let params = new HttpParams();
+
+    if (query.fromDate) {
+      params = params.set('fromDate', query.fromDate);
+    }
+
+    if (query.toDate) {
+      params = params.set('toDate', query.toDate);
+    }
+
+    if (query.bucket) {
+      params = params.set('bucket', query.bucket);
+    }
+
+    query.standortIds?.forEach((standortId) => {
+      params = params.append('standortIds', standortId);
+    });
+
+    return this.http.get<StatsTrendResponse>(`${this.baseUrl}/trend`, { params });
   }
 }

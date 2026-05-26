@@ -53,3 +53,27 @@ export interface StatsListResponse {
   standortName: string;
   items: StatKeyValue[];
 }
+
+export type StatsTrendBucket = 'month' | 'year';
+
+export interface StatsTrendSeries {
+  standortId: string;
+  standortName: string;
+  values: number[];
+}
+
+export interface StatsTrendResponse {
+  fromDate: string;
+  toDate: string;
+  bucket: StatsTrendBucket;
+  maxValue: number;
+  labels: string[];
+  series: StatsTrendSeries[];
+}
+
+export interface StatsTrendQuery {
+  fromDate?: string;
+  toDate?: string;
+  bucket?: StatsTrendBucket;
+  standortIds?: string[];
+}
