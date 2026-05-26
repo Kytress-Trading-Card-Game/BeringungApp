@@ -121,7 +121,7 @@ export class Debug implements OnInit {
 
     const settings = await firstValueFrom(this.appSettingsService.getSettings());
     const previousStandortId = settings.activeStandortId ?? null;
-    let nextRingnummer = await this.resolveStartingRingnummer();
+    const ringnummerByPrefix = new Map<string, string>();
 
     try {
       if (previousStandortId !== standortId) {
@@ -137,6 +137,13 @@ export class Debug implements OnInit {
           const selectedArt = selectedArten.length > 0
             ? selectedArten[this.randomInt(0, selectedArten.length - 1)]
             : null;
+
+          const ringnummerPrefix = this.resolveRingnummerPrefix(selectedArt);
+          let nextRingnummer = ringnummerByPrefix.get(ringnummerPrefix);
+
+          if (!nextRingnummer) {
+            nextRingnummer = await this.resolveStartingRingnummerForPrefix(ringnummerPrefix);
+          }
 
           const dto = this.createBirdDto(nextRingnummer, plan.date, plan.startMinutes, index, selectedArt);
 
@@ -167,7 +174,7 @@ export class Debug implements OnInit {
             });
           }
 
-          nextRingnummer = this.incrementRingnummer(nextRingnummer);
+          ringnummerByPrefix.set(ringnummerPrefix, this.incrementRingnummer(nextRingnummer));
           this.statusMessage.set(`Generiere Daten: ${generated}/${targetCount}`);
         }
       }
@@ -555,6 +562,22 @@ export class Debug implements OnInit {
 
     const highest = this.findHighestRingnummer(response.data);
     return highest ? this.incrementRingnummer(highest) : 'A0A0001';
+  }
+
+  private async resolveStartingRingnummerForPrefix(prefix: string): Promise<string> {
+    const normalized = prefix.trim().toUpperCase() || 'Z';
+
+    const response = await firstValueFrom(
+      this.vogelErfassungService.getNextRingnummer(normalized),
+    ).catch(() => null);
+
+    return response?.ringnummer ?? `${normalized}0A0001`;
+  }
+
+  private resolveRingnummerPrefix(artenInfo: ArtenInfos | null): string {
+    const candidate = artenInfo?.ringnummerTyp?.trim().toUpperCase() ?? '';
+    const prefix = candidate.length > 0 ? candidate[0] : '';
+    return /^[A-Z]$/.test(prefix) ? prefix : 'Z';
   }
 
   private incrementRingnummer(currentRingnummer: string): string {

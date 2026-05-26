@@ -30,7 +30,7 @@ export class ArtenVerwalten {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly importError = signal<string | null>(null);
   protected readonly importMessage = signal<string | null>(null);
-  protected readonly importPreview = signal<ArtenInfosCreateDto[]>([]);
+  protected readonly importPreview = signal<ImportPreviewItem[]>([]);
   protected readonly importFileName = signal<string | null>(null);
   protected readonly isImportPreviewOpen = signal(false);
 
@@ -228,8 +228,14 @@ export class ArtenVerwalten {
         return;
       }
 
-      this.importPreview.set(dtos);
-      this.importMessage.set(`Vorschau geladen: ${dtos.length} Zeilen.`);
+      const preview = this.buildImportPreview(dtos);
+      const existingCount = preview.filter((item) => item.exists).length;
+      const createCount = preview.length - existingCount;
+
+      this.importPreview.set(preview);
+      this.importMessage.set(
+        `Vorschau geladen: ${preview.length} Zeilen (${createCount} neu, ${existingCount} ueberschreiben).`,
+      );
       this.isImportPreviewOpen.set(true);
       this.isImporting.set(false);
       input.value = '';
@@ -269,8 +275,8 @@ export class ArtenVerwalten {
       return;
     }
 
-    const dtos = this.importPreview();
-    if (dtos.length === 0) {
+    const previewItems = this.importPreview();
+    if (previewItems.length === 0) {
       this.importError.set('Keine Vorschau zum Import vorhanden.');
       return;
     }
@@ -280,16 +286,21 @@ export class ArtenVerwalten {
 
     let failedCount = 0;
 
-    from(dtos)
+    from(previewItems)
       .pipe(
-        concatMap((dto) =>
-          this.artenInfosService.create(dto).pipe(
+        concatMap((item) => {
+          const dto = item.dto;
+          const request$ = item.exists
+            ? this.artenInfosService.update(dto.artbezeichnung, this.toUpdateDto(dto))
+            : this.artenInfosService.create(dto);
+
+          return request$.pipe(
             catchError(() => {
               failedCount += 1;
               return of(null);
             }),
-          ),
-        ),
+          );
+        }),
         toArray(),
         finalize(() => {
           this.isImporting.set(false);
@@ -441,6 +452,29 @@ export class ArtenVerwalten {
     return { dtos, errors };
   }
 
+  private buildImportPreview(dtos: ArtenInfosCreateDto[]): ImportPreviewItem[] {
+    const existing = new Set(this.arten().map((item) => this.normalizeArtKey(item.artbezeichnung)));
+
+    return dtos.map((dto) => ({
+      dto,
+      exists: existing.has(this.normalizeArtKey(dto.artbezeichnung)),
+    }));
+  }
+
+  private normalizeArtKey(value: string): string {
+    return value.trim().toLowerCase();
+  }
+
+  private toUpdateDto(dto: ArtenInfosCreateDto): ArtenInfosUpdateDto {
+    return {
+      ringnummerTyp: dto.ringnummerTyp ?? null,
+      minGewicht: dto.minGewicht ?? null,
+      maxGewicht: dto.maxGewicht ?? null,
+      minFluegellaenge: dto.minFluegellaenge ?? null,
+      maxFluegellaenge: dto.maxFluegellaenge ?? null,
+    };
+  }
+
   private parseTokenNumber(value: string, _line: number): number | null | undefined {
     if (!value || value === '-') {
       return null;
@@ -485,4 +519,9 @@ export class ArtenVerwalten {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
+}
+
+interface ImportPreviewItem {
+  dto: ArtenInfosCreateDto;
+  exists: boolean;
 }
