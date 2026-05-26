@@ -4,6 +4,8 @@ import { AppEinstellungen } from './app-einstellungen/app-einstellungen';
 import { VogelList } from './vogel-list/vogel-list';
 import { ArtenVerwalten } from './arten-verwalten/arten-verwalten';
 import { Statistiken } from './statistiken/statistiken';
+import { Debug } from './debug/debug';
+import { environment } from '../environments/environment';
 
 export const routes: Routes = [
 	{
@@ -25,5 +27,9 @@ export const routes: Routes = [
 	{
 		path: 'statistiken',
 		component: Statistiken
-	}
+	},
+	...(environment.production ? [] : [{
+		path: 'debug',
+		component: Debug
+	}])
 ];

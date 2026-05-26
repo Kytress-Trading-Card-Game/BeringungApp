@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { VogelEintragungModalService } from '../services/vogel-eintragung-modal.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-header',
@@ -12,6 +13,7 @@ import { VogelEintragungModalService } from '../services/vogel-eintragung-modal.
 })
 export class Header {
   private readonly modalService = inject(VogelEintragungModalService);
+  protected readonly isProduction = environment.production;
 
   protected openModal(): void {
     this.modalService.open();
