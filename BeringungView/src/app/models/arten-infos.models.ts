@@ -1,5 +1,6 @@
 export interface ArtenInfos {
   artbezeichnung: string;
+  ringnummerTyp?: string | null;
   minGewicht?: number | null;
   maxGewicht?: number | null;
   minFluegellaenge?: number | null;
@@ -8,6 +9,7 @@ export interface ArtenInfos {
 
 export interface ArtenInfosCreateDto {
   artbezeichnung: string;
+  ringnummerTyp?: string | null;
   minGewicht?: number | null;
   maxGewicht?: number | null;
   minFluegellaenge?: number | null;
@@ -15,6 +17,7 @@ export interface ArtenInfosCreateDto {
 }
 
 export interface ArtenInfosUpdateDto {
+  ringnummerTyp?: string | null;
   minGewicht?: number | null;
   maxGewicht?: number | null;
   minFluegellaenge?: number | null;

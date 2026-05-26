@@ -100,6 +100,7 @@ namespace BeringungApi.Controllers
 			var entity = new ArtenInfos
 			{
 				Artbezeichnung = artbezeichnung,
+				RingnummerTyp = string.IsNullOrWhiteSpace(dto.RingnummerTyp) ? null : dto.RingnummerTyp.Trim(),
 				MinGewicht = dto.MinGewicht,
 				MaxGewicht = dto.MaxGewicht,
 				MinFluegellaenge = dto.MinFluegellaenge,
@@ -134,6 +135,7 @@ namespace BeringungApi.Controllers
 			entity.MaxGewicht = dto.MaxGewicht;
 			entity.MinFluegellaenge = dto.MinFluegellaenge;
 			entity.MaxFluegellaenge = dto.MaxFluegellaenge;
+			entity.RingnummerTyp = string.IsNullOrWhiteSpace(dto.RingnummerTyp) ? null : dto.RingnummerTyp.Trim();
 
 			await _context.SaveChangesAsync();
 

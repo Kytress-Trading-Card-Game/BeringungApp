@@ -6,6 +6,8 @@ namespace BeringungApi.Dtos
 	{
 		[Required(ErrorMessage = "Die Artbezeichnung ist erforderlich.")]
 		public string Artbezeichnung { get; set; } = string.Empty;
+		[MaxLength(10)]
+		public string? RingnummerTyp { get; set; }
 
 		public double? MinGewicht { get; set; }
 		public double? MaxGewicht { get; set; }

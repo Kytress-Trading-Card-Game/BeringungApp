@@ -39,6 +39,10 @@ export class ArtenVerwalten {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(100)],
     }),
+    RingnummerTyp: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(10)],
+    }),
     MinGewicht: new FormControl<string | null>(null),
     MaxGewicht: new FormControl<string | null>(null),
     MinFluegellaenge: new FormControl<string | null>(null),
@@ -46,6 +50,10 @@ export class ArtenVerwalten {
   });
 
   protected readonly updateForm = new FormGroup({
+    RingnummerTyp: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(10)],
+    }),
     MinGewicht: new FormControl<string | null>(null),
     MaxGewicht: new FormControl<string | null>(null),
     MinFluegellaenge: new FormControl<string | null>(null),
@@ -65,6 +73,7 @@ export class ArtenVerwalten {
     }
 
     this.updateForm.setValue({
+      RingnummerTyp: selected.ringnummerTyp ?? '',
       MinGewicht: this.formatNumber(selected.minGewicht),
       MaxGewicht: this.formatNumber(selected.maxGewicht),
       MinFluegellaenge: this.formatNumber(selected.minFluegellaenge),
@@ -85,6 +94,7 @@ export class ArtenVerwalten {
     const raw = this.createForm.getRawValue();
     const dto: ArtenInfosCreateDto = {
       artbezeichnung: raw.Artbezeichnung.trim(),
+      ringnummerTyp: this.parseRingnummerTyp(raw.RingnummerTyp),
       minGewicht: this.parseNumber(raw.MinGewicht),
       maxGewicht: this.parseNumber(raw.MaxGewicht),
       minFluegellaenge: this.parseNumber(raw.MinFluegellaenge),
@@ -123,6 +133,7 @@ export class ArtenVerwalten {
 
     const raw = this.updateForm.getRawValue();
     const dto: ArtenInfosUpdateDto = {
+      ringnummerTyp: this.parseRingnummerTyp(raw.RingnummerTyp),
       minGewicht: this.parseNumber(raw.MinGewicht),
       maxGewicht: this.parseNumber(raw.MaxGewicht),
       minFluegellaenge: this.parseNumber(raw.MinFluegellaenge),
@@ -235,11 +246,12 @@ export class ArtenVerwalten {
 
   protected exportArten(): void {
     const lines = this.arten().map((art) => {
+      const ringnummerTyp = (art.ringnummerTyp ?? '-').trim() || '-';
       const minG = this.exportNumber(art.minGewicht);
       const maxG = this.exportNumber(art.maxGewicht);
       const minF = this.exportNumber(art.minFluegellaenge);
       const maxF = this.exportNumber(art.maxFluegellaenge);
-      return `${art.artbezeichnung} ${minG} ${maxG} ${minF} ${maxF}`;
+      return `${art.artbezeichnung} ${ringnummerTyp} ${minG} ${maxG} ${minF} ${maxF}`;
     });
 
     const content = lines.join('\n');
@@ -343,6 +355,7 @@ export class ArtenVerwalten {
   private resetCreateForm(): void {
     this.createForm.reset({
       Artbezeichnung: '',
+      RingnummerTyp: '',
       MinGewicht: null,
       MaxGewicht: null,
       MinFluegellaenge: null,
@@ -354,6 +367,7 @@ export class ArtenVerwalten {
 
   private resetUpdateForm(): void {
     this.updateForm.reset({
+      RingnummerTyp: '',
       MinGewicht: null,
       MaxGewicht: null,
       MinFluegellaenge: null,
@@ -390,14 +404,21 @@ export class ArtenVerwalten {
         return;
       }
 
-      const [art, minG, maxG, minF, maxF] = parts;
+      const [art, ringnummerTypToken, minGToken, maxGToken, minFToken, maxFToken] = parts;
       if (!art) {
         errors.push(`Zeile ${index + 1} enthaelt keine Art.`);
         return;
       }
 
+      const hasRingnummerTyp = parts.length >= 6;
+      const minG = hasRingnummerTyp ? minGToken : ringnummerTypToken;
+      const maxG = hasRingnummerTyp ? maxGToken : minGToken;
+      const minF = hasRingnummerTyp ? minFToken : maxGToken;
+      const maxF = hasRingnummerTyp ? maxFToken : minFToken;
+
       const dto: ArtenInfosCreateDto = {
         artbezeichnung: art,
+        ringnummerTyp: hasRingnummerTyp ? this.parseRingnummerTyp(ringnummerTypToken) : null,
         minGewicht: this.parseTokenNumber(minG, index + 1),
         maxGewicht: this.parseTokenNumber(maxG, index + 1),
         minFluegellaenge: this.parseTokenNumber(minF, index + 1),
@@ -454,5 +475,14 @@ export class ArtenVerwalten {
     }
 
     return value.toString().replace('.', ',');
+  }
+
+  private parseRingnummerTyp(value: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
   }
 }

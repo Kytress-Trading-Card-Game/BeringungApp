@@ -53,6 +53,14 @@
 					<form class="grid gap-4" [formGroup]="updateForm" (ngSubmit)="submitUpdate()">
 						<div class="grid gap-4 sm:grid-cols-2">
 							<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+								<span>Ringnummer-Typ</span>
+								<input
+									class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+									formControlName="RingnummerTyp"
+									placeholder="z.B. A"
+									type="text" />
+							</label>
+							<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
 								<span>Min. Gewicht (g)</span>
 								<input
 									class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
@@ -128,6 +136,14 @@
 								placeholder="Blaumeise"
 								type="text" />
 						</label>
+						<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
+							<span>Ringnummer-Typ</span>
+							<input
+								class="rounded-2xl border border-[color:var(--surface-muted)] bg-white px-4 py-2 text-sm text-[color:var(--ink-900)] focus:border-[color:var(--brand-300)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-100)]"
+								formControlName="RingnummerTyp"
+								placeholder="z.B. A"
+								type="text" />
+						</label>
 						<div class="grid gap-4 sm:grid-cols-2">
 							<label class="grid gap-2 text-sm font-semibold text-[color:var(--ink-700)]">
 								<span>Min. Gewicht (g)</span>
@@ -189,7 +205,7 @@
 					<div class="mt-6 rounded-2xl border border-[color:var(--surface-muted)] px-4 py-4">
 						<p class="text-sm font-semibold text-[color:var(--ink-900)]">Import & Export</p>
 						<p class="mt-2 text-xs text-[color:var(--ink-500)]">
-							Format: Art MinGewicht MaxGewicht MinFluegellaenge MaxFluegellaenge (mit Leerzeichen getrennt)
+								Format: Art RingnummerTyp MinGewicht MaxGewicht MinFluegellaenge MaxFluegellaenge (mit Leerzeichen getrennt)
 						</p>
 						<label class="mt-3 grid gap-2 text-xs font-semibold text-[color:var(--ink-700)]">
 							<span>Datei importieren (.txt/.csv)</span>
@@ -260,6 +276,8 @@
 					<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3">
 						<div class="text-sm font-semibold text-[color:var(--ink-900)]">{{ item.artbezeichnung }}</div>
 						<div class="text-xs font-semibold text-[color:var(--ink-500)]">
+							{{ item.ringnummerTyp ?? '-' }}
+							&bull;
 							{{ item.minGewicht ?? '-' }} / {{ item.maxGewicht ?? '-' }} (g)
 							&bull; {{ item.minFluegellaenge ?? '-' }} / {{ item.maxFluegellaenge ?? '-' }} (mm)
 						</div>
