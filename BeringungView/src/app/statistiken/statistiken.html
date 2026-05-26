@@ -1,165 +1,270 @@
-<section class="mx-auto w-full max-w-7xl px-6 py-8">
-	<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-		<div class="space-y-3">
-			<p class="text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--ink-500)]">Statistiken</p>
-			<h1 class="text-4xl font-semibold text-[color:var(--ink-900)]">Standorte über die Zeit vergleichen</h1>
-			<p class="max-w-3xl text-sm leading-6 text-[color:var(--ink-500)]">
-				Vergleiche die Beringungen aller gespeicherten Standorte in einer Zeitreihe. Wähle den Zeitraum, die
-				Zeitauflösung und die Standorte, die in der Auswertung sichtbar sein sollen.
-			</p>
-		</div>
-		<a
-			routerLink="/"
-			class="inline-flex items-center justify-center rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-5 py-3 text-sm font-semibold text-[color:var(--ink-700)] shadow-sm transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]">
-			Zurück zum Dashboard
-		</a>
-	</div>
-
-	<div class="mt-8 grid min-w-0 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-		<aside class="space-y-6">
-			<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
-				<div class="flex items-start justify-between gap-3">
-					<div>
-						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Zeitraum</p>
-						<h2 class="mt-1 text-xl font-semibold text-[color:var(--ink-900)]">X-Achse konfigurieren</h2>
-					</div>
-				</div>
-
-				<div class="mt-5 space-y-4">
-					<label class="block space-y-2">
-						<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Von</span>
-						<input
-							#fromInput
-							type="date"
-							class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
-							[value]="fromDate()"
-							(change)="updateFromDate(fromInput.value)" />
-					</label>
-
-					<label class="block space-y-2">
-						<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Bis</span>
-						<input
-							#toInput
-							type="date"
-							class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
-							[value]="toDate()"
-							(change)="updateToDate(toInput.value)" />
-					</label>
-
-					<label class="block space-y-2">
-						<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Auflösung</span>
-						<select
-							#bucketSelect
-							class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
-							[value]="bucket()"
-							(change)="updateBucket(bucketSelect.value)">
-							<option value="month">Monat</option>
-							<option value="year">Jahr</option>
-						</select>
-					</label>
-				</div>
-			</section>
-
-			<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
-				<div class="flex items-center justify-between gap-3">
-					<div>
-						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Standorte</p>
-						<h2 class="mt-1 text-xl font-semibold text-[color:var(--ink-900)]">Sichtbare Linien</h2>
-					</div>
-					<div class="flex gap-2">
-						<button
-							type="button"
-							class="rounded-full border border-[color:var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]"
-							(click)="selectAllStandorte()">
-							Alle
-						</button>
-						<button
-							type="button"
-							class="rounded-full border border-[color:var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]"
-							(click)="clearStandorte()">
-							Keine
-						</button>
-					</div>
-				</div>
-
-				<div class="mt-5 space-y-3">
-					@if (standorte().length === 0) {
-						<p class="text-sm text-[color:var(--ink-500)]">Keine Standorte vorhanden.</p>
+<section class="stats-page mx-auto w-full max-w-7xl px-6 py-8">
+	@if (activePanel() === 'vergleich') {
+	<button type="button" class="stats-nav-button stats-nav-right" aria-label="Standort-Statistik anzeigen"
+		(click)="showStandortPanel()">
+		&gt;
+	</button>
+	} @else {
+	<button type="button" class="stats-nav-button stats-nav-left" aria-label="Zurueck zur Zeitreihe"
+		(click)="showVergleichPanel()">
+		&lt;
+	</button>
+	}
+		<div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+			<div class="space-y-3">
+				<p class="text-sm font-semibold uppercase tracking-[0.28em] text-[color:var(--ink-500)]">Statistiken</p>
+				<h1 class="text-4xl font-semibold text-[color:var(--ink-900)]">
+					@if (activePanel() === 'vergleich') {
+						Standorte über die Zeit vergleichen
 					} @else {
-						@for (standort of standorte(); track standort.id) {
-							<label class="flex cursor-pointer items-center justify-between rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3 transition hover:border-[color:var(--brand-300)]">
-								<div>
-									<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ standort.standort }}</p>
-									<p class="text-xs text-[color:var(--ink-500)]">{{ standort.koordinaten || 'Ohne Koordinaten' }}</p>
-								</div>
-								<input
-									#standortCheckbox
-									type="checkbox"
-									class="h-4 w-4 rounded border-[color:var(--surface-muted)] text-[color:var(--brand-500)] focus:ring-[color:var(--brand-300)]"
-									[checked]="selectedStandortIds().includes(standort.id)"
-									(change)="toggleStandort(standort.id, standortCheckbox.checked)" />
-							</label>
-						}
+						Standort-Statistiken im Detail
 					}
+				</h1>
+				<p class="max-w-3xl text-sm leading-6 text-[color:var(--ink-500)]">
+					@if (activePanel() === 'vergleich') {
+						Vergleiche die Beringungen aller gespeicherten Standorte in einer Zeitreihe. Waehle den Zeitraum, die
+						Zeitaufloesung und die Standorte, die in der Auswertung sichtbar sein sollen.
+					} @else {
+						Sieh dir die wichtigsten Kennzahlen und Verteilungen fuer einen einzelnen Standort an.
+					}
+				</p>
+			</div>
+			<div class="flex flex-wrap items-center gap-3">
+				<a
+					routerLink="/"
+					class="inline-flex items-center justify-center rounded-full border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-5 py-3 text-sm font-semibold text-[color:var(--ink-700)] shadow-sm transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]">
+					Zurück zum Dashboard
+				</a>
+			</div>
+		</div>
+
+		<div class="stats-panel-container mt-8">
+			
+			<div class="stats-panel-wrapper" [class.is-standort]="activePanel() === 'standort'">
+			<section class="stats-panel">
+				<div class="grid min-w-0 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+					<aside class="space-y-6">
+						<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+							<div class="flex items-start justify-between gap-3">
+								<div>
+									<p class="text-sm font-semibold text-[color:var(--ink-500)]">Zeitraum</p>
+									<h2 class="mt-1 text-xl font-semibold text-[color:var(--ink-900)]">X-Achse konfigurieren</h2>
+								</div>
+							</div>
+
+							<div class="mt-5 space-y-4">
+								<label class="block space-y-2">
+									<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Von</span>
+									<input
+										#fromInput
+										type="date"
+										class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
+										[value]="fromDate()"
+										(change)="updateFromDate(fromInput.value)" />
+								</label>
+
+								<label class="block space-y-2">
+									<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Bis</span>
+									<input
+										#toInput
+										type="date"
+										class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
+										[value]="toDate()"
+										(change)="updateToDate(toInput.value)" />
+								</label>
+
+								<label class="block space-y-2">
+									<span class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Aufloesung</span>
+									<select
+										#bucketSelect
+										class="w-full rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
+										[value]="bucket()"
+										(change)="updateBucket(bucketSelect.value)">
+										<option value="month">Monat</option>
+										<option value="year">Jahr</option>
+									</select>
+								</label>
+							</div>
+						</section>
+
+						<section class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+							<div class="flex items-center justify-between gap-3">
+								<div>
+									<p class="text-sm font-semibold text-[color:var(--ink-500)]">Standorte</p>
+									<h2 class="mt-1 text-xl font-semibold text-[color:var(--ink-900)]">Sichtbare Linien</h2>
+								</div>
+								<div class="flex gap-2">
+									<button
+										type="button"
+										class="rounded-full border border-[color:var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]"
+										(click)="selectAllStandorte()">
+										Alle
+									</button>
+									<button
+										type="button"
+										class="rounded-full border border-[color:var(--surface-muted)] px-3 py-1.5 text-xs font-semibold text-[color:var(--ink-700)] transition hover:border-[color:var(--brand-300)] hover:text-[color:var(--brand-700)]"
+										(click)="clearStandorte()">
+										Keine
+									</button>
+								</div>
+							</div>
+
+							<div class="mt-5 space-y-3">
+								@if (standorte().length === 0) {
+									<p class="text-sm text-[color:var(--ink-500)]">Keine Standorte vorhanden.</p>
+								} @else {
+									@for (standort of standorte(); track standort.id) {
+										<label class="flex cursor-pointer items-center justify-between rounded-2xl border border-[color:var(--surface-muted)] px-4 py-3 transition hover:border-[color:var(--brand-300)]">
+											<div>
+												<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ standort.standort }}</p>
+												<p class="text-xs text-[color:var(--ink-500)]">{{ standort.koordinaten || 'Ohne Koordinaten' }}</p>
+											</div>
+											<input
+												#standortCheckbox
+												type="checkbox"
+												class="h-4 w-4 rounded border-[color:var(--surface-muted)] text-[color:var(--brand-500)] focus:ring-[color:var(--brand-300)]"
+												[checked]="selectedStandortIds().includes(standort.id)"
+												(change)="toggleStandort(standort.id, standortCheckbox.checked)" />
+										</label>
+									}
+								}
+							</div>
+						</section>
+					</aside>
+
+					<section class="min-w-0 space-y-6">
+						<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+							<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+								<div>
+									<p class="text-sm font-semibold text-[color:var(--ink-500)]">Zeitreihe</p>
+									<h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">Beringungen je Standort</h2>
+									<p class="mt-2 text-sm text-[color:var(--ink-500)]">
+										Die Y-Achse skaliert automatisch bis zum höchsten Wert der aktuell sichtbaren Standorte.
+									</p>
+								</div>
+								<div class="rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 text-right">
+									<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Maximalwert</p>
+									<p class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">
+										{{ formatAxisLabel(trend()?.maxValue ?? 0) }}
+									</p>
+								</div>
+							</div>
+
+							@if (errorMessage()) {
+								<div class="mt-5 rounded-2xl border border-[color:var(--danger-100)] bg-[color:var(--danger-100)] px-4 py-3 text-sm font-semibold text-[color:var(--danger-500)]">
+									{{ errorMessage() }}
+								</div>
+							}
+
+							<div class="mt-6 overflow-hidden rounded-3xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)]">
+								<div class="relative h-[420px] w-full p-4">
+									<canvas #trendChartCanvas class="h-full w-full" role="img" aria-label="Beringungen je Standort ueber die Zeit"></canvas>
+									@if (!trend()) {
+										<div class="absolute inset-0 flex items-center justify-center px-6 text-center">
+											<div class="max-w-md space-y-3">
+												<p class="text-lg font-semibold text-[color:var(--ink-900)]">Noch keine Trenddaten</p>
+												<p class="text-sm text-[color:var(--ink-500)]">Waehle einen Zeitraum und mindestens einen Standort aus, um die Zeitreihe zu laden.</p>
+											</div>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+
+						<div class="grid gap-4 lg:grid-cols-3">
+							@if (trend()?.series?.length) {
+								@for (series of trend()!.series; track series.standortId; let index = $index) {
+									<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+										<div class="flex items-center gap-3">
+											<span class="h-3 w-3 rounded-full" [style.backgroundColor]="getChartColor(index)"></span>
+											<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ series.standortName }}</p>
+										</div>
+										<p class="mt-3 text-2xl font-semibold text-[color:var(--ink-900)]">
+											{{ formatAxisLabel(getSeriesMax(series)) }}
+										</p>
+										<p class="mt-1 text-xs text-[color:var(--ink-500)]">Höchster Punkt im gewählten Zeitraum</p>
+									</div>
+								}
+							}
+						</div>
+					</section>
 				</div>
 			</section>
-		</aside>
 
-		<section class="min-w-0 space-y-6">
-			<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
-				<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-					<div>
-						<p class="text-sm font-semibold text-[color:var(--ink-500)]">Zeitreihe</p>
-						<h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">Beringungen je Standort</h2>
-						<p class="mt-2 text-sm text-[color:var(--ink-500)]">
-							Die Y-Achse skaliert automatisch bis zum höchsten Wert der aktuell sichtbaren Standorte.
-						</p>
-					</div>
-					<div class="rounded-2xl bg-[color:var(--surface-muted)] px-4 py-3 text-right">
-						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Maximalwert</p>
-						<p class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">
-							{{ formatAxisLabel(trend()?.maxValue ?? 0) }}
-						</p>
-					</div>
-				</div>
-
-				@if (errorMessage()) {
-					<div class="mt-5 rounded-2xl border border-[color:var(--danger-100)] bg-[color:var(--danger-100)] px-4 py-3 text-sm font-semibold text-[color:var(--danger-500)]">
-						{{ errorMessage() }}
-					</div>
-				}
-
-				<div class="mt-6 overflow-hidden rounded-3xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)]">
-					<div class="relative h-[420px] w-full p-4">
-						<canvas #trendChartCanvas class="h-full w-full" role="img" aria-label="Beringungen je Standort über die Zeit"></canvas>
-						@if (!trend()) {
-							<div class="absolute inset-0 flex items-center justify-center px-6 text-center">
-								<div class="max-w-md space-y-3">
-									<p class="text-lg font-semibold text-[color:var(--ink-900)]">Noch keine Trenddaten</p>
-									<p class="text-sm text-[color:var(--ink-500)]">Wähle einen Zeitraum und mindestens einen Standort aus, um die Zeitreihe zu laden.</p>
-								</div>
-							</div>
-						}
-					</div>
-				</div>
-			</div>
-
-			<div class="grid gap-4 lg:grid-cols-3">
-				@if (trend()?.series?.length) {
-					@for (series of trend()!.series; track series.standortId; let index = $index) {
-						<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
-							<div class="flex items-center gap-3">
-								<span class="h-3 w-3 rounded-full" [style.backgroundColor]="getChartColor(index)"></span>
-								<p class="text-sm font-semibold text-[color:var(--ink-900)]">{{ series.standortName }}</p>
-							</div>
-							<p class="mt-3 text-2xl font-semibold text-[color:var(--ink-900)]">
-								{{ formatAxisLabel(getSeriesMax(series)) }}
+			<section class="stats-panel">
+				<div class="rounded-3xl bg-[color:var(--surface)] p-6 shadow-sm">
+					<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+						<div>
+							<p class="text-sm font-semibold text-[color:var(--ink-500)]">Standort-Fokus</p>
+							<h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink-900)]">Kennzahlen fuer den ausgewaehlten Standort</h2>
+							<p class="mt-2 text-sm text-[color:var(--ink-500)]">
+								Die Charts zeigen den aktuellen Saisonstand sowie die wichtigsten Verteilungen.
 							</p>
-							<p class="mt-1 text-xs text-[color:var(--ink-500)]">Höchster Punkt im gewählten Zeitraum</p>
+						</div>
+						<div class="flex flex-col gap-2">
+							<label class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Standort</label>
+							<select
+								#detailStandortSelect
+								class="rounded-2xl border border-[color:var(--surface-muted)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--ink-900)] outline-none transition focus:border-[color:var(--brand-300)]"
+								[value]="detailStandortId() ?? ''"
+								(change)="selectDetailStandort(detailStandortSelect.value)">
+								<option value="" disabled>Standort waehlen</option>
+								@for (standort of standorte(); track standort.id) {
+									<option [value]="standort.id">{{ standort.standort }}</option>
+								}
+							</select>
+						</div>
+					</div>
+
+					@if (detailErrorMessage()) {
+						<div class="mt-5 rounded-2xl border border-[color:var(--danger-100)] bg-[color:var(--danger-100)] px-4 py-3 text-sm font-semibold text-[color:var(--danger-500)]">
+							{{ detailErrorMessage() }}
 						</div>
 					}
-				}
-			</div>
-		</section>
-	</div>
-</section>
+				</div>
+
+				<div class="mt-6 grid gap-4 lg:grid-cols-3">
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Erstfund vs Wiederfund</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #wiederfangChartCanvas class="h-full w-full" role="img" aria-label="Erstfund vs Wiederfund"></canvas>
+						</div>
+					</div>
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Diese vs letzte Saison</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #seasonChartCanvas class="h-full w-full" role="img" aria-label="Saisonvergleich"></canvas>
+						</div>
+					</div>
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Häufigste Vogelarten</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #topArtenChartCanvas class="h-full w-full" role="img" aria-label="Haeufigste Vogelarten"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-4 grid gap-4 lg:grid-cols-3">
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Altersstruktur</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #alterChartCanvas class="h-full w-full" role="img" aria-label="Altersstruktur"></canvas>
+						</div>
+					</div>
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Geschlechtsverteilung</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #geschlechtChartCanvas class="h-full w-full" role="img" aria-label="Geschlechtsverteilung"></canvas>
+						</div>
+					</div>
+					<div class="rounded-3xl bg-[color:var(--surface)] p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-500)]">Fangaktivitaet pro Monat</p>
+						<div class="mt-4 h-[220px]">
+							<canvas #monthChartCanvas class="h-full w-full" role="img" aria-label="Fangaktivitaet pro Monat"></canvas>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+		</div>
+	</section>

@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using BeringungApi.Data;
 using BeringungApi.Dtos;
 using BeringungApi.Models;
+using BeringungApi.Services;
+using System.Diagnostics;
 
 namespace BeringungApi.Controllers
 {
@@ -11,10 +14,20 @@ namespace BeringungApi.Controllers
 	public class ArtenInfosController : ControllerBase
 	{
 		private readonly AppDbContext _context;
+		private readonly IMemoryCache _cache;
+		private readonly IStatsCacheService _statsCache;
+		private readonly ILogger<ArtenInfosController> _logger;
 
-		public ArtenInfosController(AppDbContext context)
+		public ArtenInfosController(
+			AppDbContext context,
+			IMemoryCache cache,
+			IStatsCacheService statsCache,
+			ILogger<ArtenInfosController> logger)
 		{
 			_context = context;
+			_cache = cache;
+			_statsCache = statsCache;
+			_logger = logger;
 		}
 
 		// GET: api/ArtenInfos
@@ -22,16 +35,28 @@ namespace BeringungApi.Controllers
 		public async Task<ActionResult<IEnumerable<ArtenInfos>>> GetArtenInfos()
 		{
 			var result = await _context.ArtenInfos
+					.AsNoTracking()
 					.OrderBy(a => a.Artbezeichnung)
 					.ToListAsync();
 
 			return Ok(result);
 		}
 
-		// GET: api/ArtenInfos/top-arten?standortId=...
+		// GET: api/ArtenInfos/top-arten?standortId=...&limit=25
 		[HttpGet("top-arten")]
-		public async Task<ActionResult<ArtenInfosTopArtenResponse>> GetTopArten([FromQuery] Guid standortId)
+		public async Task<ActionResult<ArtenInfosTopArtenResponse>> GetTopArten(
+			[FromQuery] Guid standortId,
+			[FromQuery] int? limit)
 		{
+			var timer = Stopwatch.StartNew();
+			var take = Math.Clamp(limit ?? 25, 1, 100);
+			var cacheKey = BuildCacheKey("top-arten", standortId, take, _statsCache.GetVersion());
+			if (_cache.TryGetValue(cacheKey, out ArtenInfosTopArtenResponse? cachedResponse))
+			{
+				_logRequestDuration("arten-top-arten", timer.ElapsedMilliseconds, true);
+				return cachedResponse!;
+			}
+
 			var standort = await _context.StandortDaten.FindAsync(standortId);
 			if (standort == null)
 			{
@@ -39,6 +64,7 @@ namespace BeringungApi.Controllers
 			}
 
 			var standortQuery = _context.VogelErfassungen
+				.AsNoTracking()
 				.Where(v => v.Beringungsort == standort.Standort)
 				.Where(v => !string.IsNullOrWhiteSpace(v.Vogelart));
 
@@ -47,31 +73,43 @@ namespace BeringungApi.Controllers
 				standortQuery = standortQuery.Where(v => v.Koordinaten == standort.Koordinaten);
 			}
 
-			var counts = standortQuery
+			var counts = await standortQuery
 				.GroupBy(v => v.Vogelart!.ToLower())
-				.Select(g => new { Key = g.Key, Count = g.Count() });
-
-			var items = await _context.ArtenInfos
-				.Select(a => new { a.Artbezeichnung, Key = a.Artbezeichnung.ToLower() })
-				.GroupJoin(
-					counts,
-					a => a.Key,
-					c => c.Key,
-					(a, c) => new StatKeyValue
-					{
-						Key = a.Artbezeichnung,
-						Count = c.Select(x => x.Count).FirstOrDefault()
-					})
+				.Select(g => new { Key = g.Key, Count = g.Count() })
 				.OrderByDescending(x => x.Count)
 				.ThenBy(x => x.Key)
+				.Take(take)
 				.ToListAsync();
 
-			return new ArtenInfosTopArtenResponse
+			var keyList = counts.Select(c => c.Key).ToList();
+			var nameMap = await _context.ArtenInfos
+				.AsNoTracking()
+				.Where(a => keyList.Contains(a.Artbezeichnung.ToLower()))
+				.Select(a => new { Key = a.Artbezeichnung.ToLower(), Name = a.Artbezeichnung })
+				.ToListAsync();
+
+			var nameLookup = nameMap
+				.GroupBy(x => x.Key)
+				.ToDictionary(x => x.Key, x => x.First().Name);
+
+			var items = counts
+				.Select(item => new StatKeyValue
+				{
+					Key = nameLookup.TryGetValue(item.Key, out var name) ? name : item.Key,
+					Count = item.Count
+				})
+				.ToList();
+
+			var response = new ArtenInfosTopArtenResponse
 			{
 				StandortId = standort.Id,
 				StandortName = standort.Standort,
 				Items = items
 			};
+
+			_cache.Set(cacheKey, response, BuildCacheOptions());
+			_logRequestDuration("arten-top-arten", timer.ElapsedMilliseconds, false);
+			return response;
 		}
 
 		// POST: api/ArtenInfos
@@ -109,6 +147,7 @@ namespace BeringungApi.Controllers
 
 			_context.ArtenInfos.Add(entity);
 			await _context.SaveChangesAsync();
+			_statsCache.Invalidate();
 
 			return Ok(entity);
 		}
@@ -138,6 +177,7 @@ namespace BeringungApi.Controllers
 			entity.RingnummerTyp = string.IsNullOrWhiteSpace(dto.RingnummerTyp) ? null : dto.RingnummerTyp.Trim();
 
 			await _context.SaveChangesAsync();
+			_statsCache.Invalidate();
 
 			return Ok(entity);
 		}
@@ -162,8 +202,28 @@ namespace BeringungApi.Controllers
 
 			_context.ArtenInfos.Remove(entity);
 			await _context.SaveChangesAsync();
+			_statsCache.Invalidate();
 
 			return NoContent();
+		}
+
+		private MemoryCacheEntryOptions BuildCacheOptions()
+		{
+			return new MemoryCacheEntryOptions
+			{
+				SlidingExpiration = TimeSpan.FromMinutes(5),
+				AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(20)
+			};
+		}
+
+		private static string BuildCacheKey(string prefix, Guid standortId, int limit, string version)
+		{
+			return $"arten:{prefix}:{version}:{standortId}:{limit}";
+		}
+
+		private void _logRequestDuration(string name, long elapsedMs, bool cached)
+		{
+			_logger.LogInformation("ArtenInfos {Name} responded in {ElapsedMs}ms (cached: {Cached})", name, elapsedMs, cached);
 		}
 	}
 }

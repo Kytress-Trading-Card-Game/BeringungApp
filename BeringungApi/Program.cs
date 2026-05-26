@@ -26,6 +26,9 @@ var sqliteConnectionString = $"Data Source={databasePath}";
 builder.Services.AddDbContext<AppDbContext>(options =>
 		options.UseSqlite(sqliteConnectionString));
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IStatsCacheService, StatsCacheService>();
+
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {

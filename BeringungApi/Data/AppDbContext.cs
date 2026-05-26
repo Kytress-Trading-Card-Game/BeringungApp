@@ -16,6 +16,21 @@ public class AppDbContext : DbContext
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => v.Beringungsdatum);
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => new { v.Beringungsort, v.Koordinaten });
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => new { v.Beringungsdatum, v.Beringungsort, v.Koordinaten });
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => v.Wiederfang);
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => new { v.Beringungsdatum, v.Wiederfang });
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => v.Vogelart);
+			modelBuilder.Entity<VogelErfassung>()
+				.HasIndex(v => v.Ringnummer);
+
 			modelBuilder.Entity<AppSettings>()
 				.Navigation(s => s.ActiveStandort)
 				.AutoInclude();

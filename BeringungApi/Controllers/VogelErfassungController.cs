@@ -4,6 +4,7 @@ using BeringungApi.Data;
 using BeringungApi.Dtos;
 using BeringungApi.Models;
 using BeringungApi.Services;
+using System.Diagnostics;
 
 namespace BeringungApi.Controllers
 {
@@ -13,11 +14,19 @@ namespace BeringungApi.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IInputSanitizerService _inputSanitizer;
+        private readonly IStatsCacheService _statsCache;
+        private readonly ILogger<VogelErfassungController> _logger;
 
-        public VogelErfassungController(AppDbContext context, IInputSanitizerService inputSanitizer)
+        public VogelErfassungController(
+            AppDbContext context,
+            IInputSanitizerService inputSanitizer,
+            IStatsCacheService statsCache,
+            ILogger<VogelErfassungController> logger)
         {
             _context = context;
             _inputSanitizer = inputSanitizer;
+            _statsCache = statsCache;
+            _logger = logger;
         }
 
 		// GET: api/VogelErfassung
@@ -25,7 +34,8 @@ namespace BeringungApi.Controllers
 		public async Task<ActionResult<object>> GetVogelErfassungen(
 				[FromQuery] VogelErfassungQueryDto query)
 		{
-			var vogelQuery = _context.VogelErfassungen.AsQueryable();
+            var timer = Stopwatch.StartNew();
+            var vogelQuery = _context.VogelErfassungen.AsNoTracking();
 
 			// =========================
 			// FILTER
@@ -146,6 +156,8 @@ namespace BeringungApi.Controllers
 					.Take(query.PageSize)
 					.ToListAsync();
 
+            _logger.LogInformation("VogelErfassung list responded in {ElapsedMs}ms", timer.ElapsedMilliseconds);
+
 			return Ok(new
 			{
 				page = query.Page,
@@ -161,6 +173,7 @@ namespace BeringungApi.Controllers
 		public async Task<ActionResult<IEnumerable<VogelErfassung>>> GetByRingnummer(string ringnummer)
 		{
 			var result = await _context.VogelErfassungen
+                    .AsNoTracking()
 					.Where(v => v.Ringnummer == ringnummer)
 					.OrderByDescending(v => v.Beringungsdatum)
 					.ToListAsync();
@@ -179,6 +192,7 @@ namespace BeringungApi.Controllers
 
             var prefix = anfangsbuchstabe.ToUpper();
             var latestRingnummer = await _context.VogelErfassungen
+                .AsNoTracking()
                 .Where(v => v.Ringnummer != null && v.Ringnummer.ToUpper().StartsWith(prefix))
                 .OrderByDescending(v => v.Ringnummer)
                 .Select(v => v.Ringnummer)
@@ -201,7 +215,9 @@ namespace BeringungApi.Controllers
 		[HttpGet("{id}")]
         public async Task<ActionResult<VogelErfassung>> GetVogelErfassung(Guid id)
         {
-            var vogelErfassung = await _context.VogelErfassungen.FindAsync(id);
+            var vogelErfassung = await _context.VogelErfassungen
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.Id == id);
 
             if (vogelErfassung == null)
             {
@@ -226,6 +242,7 @@ namespace BeringungApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                _statsCache.Invalidate();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -286,6 +303,7 @@ namespace BeringungApi.Controllers
 
             _context.VogelErfassungen.Add(vogelErfassung);
             await _context.SaveChangesAsync();
+            _statsCache.Invalidate();
 
             return CreatedAtAction(nameof(GetVogelErfassung), new { id = vogelErfassung.Id }, vogelErfassung);
         }
@@ -302,6 +320,7 @@ namespace BeringungApi.Controllers
 
             _context.VogelErfassungen.Remove(vogelErfassung);
             await _context.SaveChangesAsync();
+            _statsCache.Invalidate();
 
             return NoContent();
         }
