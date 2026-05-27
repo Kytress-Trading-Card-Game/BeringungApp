@@ -1,0 +1,41 @@
+name: Docker Build & Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, tcg]
+
+    steps:
+      # 1. Checkout the repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t tcg/beringung-backend:latest .
+
+      # 3. Stop old container if exists
+      - name: Stop old container
+        run: |
+          if [ "$(docker ps -q -f name=beringung-backend)" ]; then
+            docker stop beringung-backend
+            docker rm beringung-backend
+          fi
+
+      # 4. Start new container
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name beringung-backend \
+            --restart unless-stopped \
+            --network tcg-network \
+            -m 512m \
+            tcg/beringung-backend:latest
+            
+          docker network connect npm-network beringung-backend
