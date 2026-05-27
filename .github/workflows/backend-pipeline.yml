@@ -3,7 +3,7 @@ name: Docker Build & Deploy Backend
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -34,10 +34,9 @@ jobs:
           docker run -d \
             --name beringung-backend \
             --restart unless-stopped \
-            --network tcg-network \
+            --network npm-network \
             -p 3003:3003 \
-            -e PORT=3003 \
+            -e ASPNETCORE_URLS=http://+:3003 \
+            -v /opt/beringung:/data \
             -m 512m \
             tcg/beringung-backend:latest
-
-          docker network connect npm-network beringung-backend
