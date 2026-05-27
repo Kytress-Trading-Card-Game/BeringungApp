@@ -35,6 +35,8 @@ jobs:
             --name beringung-backend \
             --restart unless-stopped \
             --network tcg-network \
+            -p 3003:3003 \
+            -e PORT=3003 \
             -m 512m \
             tcg/beringung-backend:latest
 
