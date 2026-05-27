@@ -1,0 +1,38 @@
+name: Build and Deploy Frontend as Docker
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, tcg]
+
+    steps:
+    # 1) Checkout repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 2) Build Docker image (Angular app in subfolder)
+    - name: Build Docker image
+      run: |
+        docker build -t beringung-frontend-app:latest ./BeringungView
+
+    # 3) Stop and remove existing container if it exists
+    - name: Stop and remove existing container
+      run: |
+        docker rm -f beringung-frontend-app || echo "No existing container"
+
+    # 4) Run new container
+    - name: Run new container
+      run: |
+        docker run -d \
+          --restart unless-stopped \
+          --name beringung-frontend-app \
+          --network npm-network \
+          -p 8080:80 \
+          -p 8443:443 \
+          -m 512m \
+          beringung-frontend-app:latest
