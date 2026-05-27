@@ -32,7 +32,5 @@ jobs:
           --restart unless-stopped \
           --name beringung-frontend-app \
           --network npm-network \
-          -p 8080:80 \
-          -p 8443:443 \
           -m 512m \
           beringung-frontend-app:latest
