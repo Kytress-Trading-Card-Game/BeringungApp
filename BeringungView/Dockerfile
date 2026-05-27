@@ -12,7 +12,9 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies with pnpm
-RUN corepack enable && pnpm config set ignore-scripts false && pnpm install --frozen-lockfile
+RUN corepack enable \
+ && pnpm config set enable-pre-post-scripts true \
+ && pnpm install --frozen-lockfile
 
 # Copy full project
 COPY . .
