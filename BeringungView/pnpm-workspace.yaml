@@ -1,0 +1,7 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+  '@swc/core': true
+
+  core-js: false
+  some-untrusted-package: false
