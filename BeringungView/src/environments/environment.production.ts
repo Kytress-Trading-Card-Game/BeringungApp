@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'http://beringung.kytress.de'
+  apiBaseUrl: 'https://beringung.kytress.de'
 };
