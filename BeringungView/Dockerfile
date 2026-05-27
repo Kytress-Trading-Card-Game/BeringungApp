@@ -13,8 +13,7 @@ COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies with pnpm
 RUN corepack enable \
- && pnpm config set enable-pre-post-scripts true \
- && pnpm install --frozen-lockfile
+ && pnpm install --frozen-lockfile --approve-builds
 
 # Copy full project
 COPY . .
