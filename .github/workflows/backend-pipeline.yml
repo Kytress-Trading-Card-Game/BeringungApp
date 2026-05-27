@@ -15,10 +15,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Build Docker image
+      # 2. Build Docker image (FIXED PATH)
       - name: Build Docker image
         run: |
-          docker build -t tcg/beringung-backend:latest .
+          docker build -t tcg/beringung-backend:latest ./BeringungApi
 
       # 3. Stop old container if exists
       - name: Stop old container
@@ -37,5 +37,5 @@ jobs:
             --network tcg-network \
             -m 512m \
             tcg/beringung-backend:latest
-            
+
           docker network connect npm-network beringung-backend
