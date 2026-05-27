@@ -4,16 +4,17 @@ using BeringungApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://127.0.0.1:5000");
-
+builder.WebHost.UseUrls("http://+:3003");
+// builder.WebHost.UseUrls("http://127.0.0.1:5000");
 // Add services to the container.
 
 
 // var sqliteConnectionString = builder.Configuration.GetConnectionString("BeringungDb")
 // 	?? "Data Source=beringung.db";
 // prodSqliteString!:
-var appDataPath = Environment.GetFolderPath(
-		Environment.SpecialFolder.ApplicationData);
+var appDataPath = "/data";
+// var appDataPath = Environment.GetFolderPath(
+// 		Environment.SpecialFolder.ApplicationData);
 
 var appFolder = Path.Combine(appDataPath, "BeringungApp");
 
