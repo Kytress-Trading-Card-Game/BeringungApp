@@ -28,8 +28,8 @@ export const routes: Routes = [
 		path: 'statistiken',
 		component: Statistiken
 	},
-	...(environment.production ? [] : [{
+	{
 		path: 'debug',
 		component: Debug
-	}])
+	}
 ];

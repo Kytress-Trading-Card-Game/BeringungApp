@@ -86,23 +86,22 @@ namespace BeringungApi.Controllers
 				.Take(take)
 				.ToListAsync();
 
-			var keyList = counts.Select(c => c.Key).ToList();
-			var nameMap = await _context.ArtenInfos
+			var allArten = await _context.ArtenInfos
 				.AsNoTracking()
-				.Where(a => keyList.Contains(a.Artbezeichnung.ToLower()))
 				.Select(a => new { Key = a.Artbezeichnung.ToLower(), Name = a.Artbezeichnung })
 				.ToListAsync();
 
-			var nameLookup = nameMap
+			var countLookup = counts.ToDictionary(x => x.Key, x => x.Count);
+			var items = allArten
 				.GroupBy(x => x.Key)
-				.ToDictionary(x => x.Key, x => x.First().Name);
-
-			var items = counts
-				.Select(item => new StatKeyValue
+				.Select(x => new StatKeyValue
 				{
-					Key = nameLookup.TryGetValue(item.Key, out var name) ? name : item.Key,
-					Count = item.Count
+					Key = x.First().Name,
+					Count = countLookup.TryGetValue(x.Key, out var count) ? count : 0
 				})
+				.OrderByDescending(x => x.Count)
+				.ThenBy(x => x.Key, StringComparer.CurrentCultureIgnoreCase)
+				.Take(take)
 				.ToList();
 
 			var response = new ArtenInfosTopArtenResponse
